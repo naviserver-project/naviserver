@@ -40,7 +40,7 @@ static char *UrlEncode(Tcl_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char percentScheme, bool upperCase)
     NS_GNUC_NONNULL(1,2);
 static char *UrlDecode(Tcl_DString *dsPtr, const char *urlSegment,
-                       Tcl_Encoding encoding, char percentScheme, Ns_ReturnCode *resultPtr)
+                       Tcl_Encoding encoding, char percentScheme, bool logInvalidUtf8, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1,2);
 
 static int UrlEncodeQuery(Tcl_Interp *interp, Tcl_DString *dsPtr,
@@ -1029,7 +1029,13 @@ Ns_UrlPathDecode(Tcl_DString *dsPtr, const char *urlSegment,
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
-    return UrlDecode(dsPtr, urlSegment, encoding, 'p', NULL);
+    return UrlDecode(dsPtr, urlSegment, encoding, 'p', NS_TRUE, NULL);
+}
+
+char *
+NsUrlPathDecodeQuiet(Tcl_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
+{
+    return UrlDecode(dsPtr, urlSegment, encoding, 'p', NS_FALSE, NULL);
 }
 
 
@@ -1069,7 +1075,7 @@ Ns_UrlQueryDecode(Tcl_DString *dsPtr, const char *urlSegment,
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
-    return UrlDecode(dsPtr, urlSegment, encoding, 'q', resultPtr);
+    return UrlDecode(dsPtr, urlSegment, encoding, 'q', NS_TRUE, resultPtr);
 }
 
 /*
@@ -1111,9 +1117,9 @@ Ns_CookieDecode(Tcl_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
     NS_NONNULL_ASSERT(cookie != NULL);
 
 #ifdef RFC1738
-    return UrlDecode(dsPtr, cookie, encoding, 'q', NULL);
+    return UrlDecode(dsPtr, cookie, encoding, 'q', NS_TRUE, NULL);
 #else
-    return UrlDecode(dsPtr, cookie, encoding, 'c', NULL);
+    return UrlDecode(dsPtr, cookie, encoding, 'c', NS_TRUE, NULL);
 #endif
 }
 
@@ -1132,7 +1138,7 @@ Ns_Oauth1Decode(Tcl_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(cookie != NULL);
 
-    return UrlDecode(dsPtr, cookie, encoding, 'o', NULL);
+    return UrlDecode(dsPtr, cookie, encoding, 'o', NS_TRUE, NULL);
 
 }
 
@@ -1495,7 +1501,7 @@ UrlFallbackDecode(NsInterp *itPtr, Tcl_DString *dsPtr, const char *inputStr,
 
         Ns_Log(Debug, "percent decode: retry decoding with encoding %s",
                Ns_GetEncodingCharset(fallbackEncoding));
-        (void)UrlDecode(dsPtr, inputStr, fallbackEncoding, percentScheme, &result);
+        (void)UrlDecode(dsPtr, inputStr, fallbackEncoding, percentScheme, NS_TRUE, &result);
         Ns_Log(Debug, "percent decode: retry decoding ends with status %s '%s'",
                Ns_ReturnCodeString(status), dsPtr->string);
     }
@@ -1540,7 +1546,7 @@ UrlPercentDecode(NsInterp *itPtr, const char *inputStr, char percentScheme, cons
         encoding = Ns_GetUrlEncoding(NULL);
     }
 
-    (void)UrlDecode(&ds, inputStr, encoding, percentScheme, &status);
+    (void)UrlDecode(&ds, inputStr, encoding, percentScheme, NS_TRUE, &status);
     if (status == NS_OK) {
         Tcl_DStringResult(itPtr->interp, &ds);
     } else if (charset == NULL) {
@@ -1915,7 +1921,7 @@ PercentDecode(char *dest, const char *source, char percentScheme)
 
 static char *
 UrlDecode(Tcl_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
-          char percentScheme, Ns_ReturnCode *resultPtr)
+          char percentScheme, bool logInvalidUtf8, Ns_ReturnCode *resultPtr)
 {
     const char      *firstCode;
     size_t           inputLength;
@@ -1978,7 +1984,8 @@ UrlDecode(Tcl_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
             Tcl_DString messageDs;
 
             if (encoding == NS_utf8Encoding) {
-                validByteSequence = Ns_Valid_UTF8((const unsigned char *)decoded, (size_t)decodedLength, &messageDs);
+                validByteSequence = Ns_Valid_UTF8((const unsigned char *)decoded, (size_t)decodedLength,
+                                                     logInvalidUtf8 ? &messageDs : NULL);
             }
             Ns_Log(Debug, "### UrlDecode external '%s' encoding %s valid %d", decoded,
                    Tcl_GetEncodingName(encoding), validByteSequence);
@@ -1991,17 +1998,10 @@ UrlDecode(Tcl_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
                 Tcl_DStringAppend(dsPtr, encodedDs.string, encodedDs.length);
                 Tcl_DStringFree(&encodedDs);
             } else {
-                /*
-                 * The input byte sequence is not valid. Here, we have
-                 * the invalid UTF-8 sequence at hand. We do not want to
-                 * loose this information about the bad byte
-                 * sequence. Since we have no interp in the API, we
-                 * cannot return it in the error message. Therefore, we
-                 * provide a warning message.
-                 */
-
-                Ns_Log(Warning, "decoded string contains invalid UTF-8: '%s'", messageDs.string);
-                Tcl_DStringFree(&messageDs);
+                if (logInvalidUtf8) {
+                    Ns_Log(Warning, "decoded string contains invalid UTF-8: '%s'", messageDs.string);
+                    Tcl_DStringFree(&messageDs);
+                }
                 Tcl_DStringSetLength(dsPtr, oldLength);
 
                 result = NS_ERROR;

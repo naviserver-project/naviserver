@@ -442,7 +442,7 @@ typedef struct Request {
     size_t coff;                  /* Content buffer offset */
     size_t leftover;              /* Leftover bytes from earlier requests */
     Tcl_DString buffer;           /* Request and content buffer */
-    const char *parseError;        /* Static request-line parser diagnostic */
+    const char *parseError;        /* Static request rejection diagnostic */
     char   savedChar;             /* Character potentially clobbered by null character */
 
 } Request;
@@ -2460,6 +2460,10 @@ NS_EXTERN void NsUnblockSignal(int signal);
 /*
  * url.c
  */
+NS_EXTERN char *NsUrlPathDecodeQuiet(Tcl_DString *dsPtr, const char *urlSegment,
+                                     Tcl_Encoding encoding)
+    NS_GNUC_NONNULL(1,2);
+
 NS_EXTERN bool NsUrlEncodingCheck(const char *msg, const char *inputStr, TCL_SIZE_T inputLength,
                                   Tcl_DString *repairPtr, bool *controlsPtr, const char *repairHint)
     NS_GNUC_NONNULL(1,2);

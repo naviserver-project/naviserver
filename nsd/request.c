@@ -25,7 +25,7 @@
  * Local functions defined in this file.
  */
 
-static Ns_ReturnCode SetUrl(Ns_Request *request, char *url)
+static Ns_ReturnCode SetUrl(Ns_Request *request, char *url, bool logInvalidUtf8)
     NS_GNUC_NONNULL(1,2);
 
 static void FreeUrl(Ns_Request *request)
@@ -526,7 +526,7 @@ NsParseRequest(Ns_Request *request, const char *line, size_t len, const char **r
         goto error;
     }
 
-    if (SetUrl(request, url) != NS_OK) {
+    if (SetUrl(request, url, NS_FALSE) != NS_OK) {
         errorMsg = "invalid UTF-8 in request URL";
         goto error;
     }
@@ -619,7 +619,7 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
     FreeUrl(request);
     Tcl_DStringInit(&ds);
     Tcl_DStringAppend(&ds, url, TCL_INDEX_NONE);
-    status = SetUrl(request, ds.string);
+    status = SetUrl(request, ds.string, NS_TRUE);
     Tcl_DStringFree(&ds);
 
     return status;
@@ -676,7 +676,7 @@ FreeUrl(Ns_Request *request)
  */
 
 static Ns_ReturnCode
-SetUrl(Ns_Request *request, char *url)
+SetUrl(Ns_Request *request, char *url, bool logInvalidUtf8)
 {
     Tcl_DString   ds1;
     char         *p, *encodedPath;
@@ -706,7 +706,9 @@ SetUrl(Ns_Request *request, char *url)
      */
     encodedPath = url;
     encoding = Ns_GetUrlEncoding(NULL);
-    p = Ns_UrlPathDecode(&ds1, encodedPath, encoding);
+    p = logInvalidUtf8
+        ? Ns_UrlPathDecode(&ds1, encodedPath, encoding)
+        : NsUrlPathDecodeQuiet(&ds1, encodedPath, encoding);
     Ns_Log(Debug, "### Request SetUrl '%s' decoded path '%s' length %ld", encodedPath, p, (long)ds1.length);
 
     if (p == NULL) {

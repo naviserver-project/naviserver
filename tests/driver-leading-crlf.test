@@ -143,10 +143,22 @@ test driver-leading-crlf-5.1 {excess prefix still produces one combined diagnost
     } -result {{{400 {}} {400 {}}} 1}
 
 
-foreach {suffix target headers reason} {
-    1 missing-slash {Host: localhost\r\n} {request target must start with a slash}
-    2 {/bad\separator} {Host: localhost\r\n} {target string contains invalid path separator}
-    3 /missing-host {} {request header field "Host" is missing in HTTP/1.1 request}
+foreach {suffix target headers body reason} {
+    1 missing-slash {Host: localhost\r\n} {} {request target must start with a slash}
+    2 {/bad\\separator} {Host: localhost\r\n} {} {target string contains invalid path separator}
+    3 /missing-host {} {} {request header field "Host" is missing in HTTP/1.1 request}
+    4 /duplicate-host {Host: localhost\r\nHost: localhost\r\n} {} {request header field "host" is provided more than once}
+    5 /conflicting-framing {Host: localhost\r\nContent-Length: 0\r\nTransfer-Encoding: chunked\r\n} {} {both Content-Length and Transfer-Encoding are present}
+    6 /unsupported-encoding {Host: localhost\r\nTransfer-Encoding: gzip\r\n} {} {invalid or unsupported Transfer-Encoding}
+    7 /invalid-content-length {Host: localhost\r\nContent-Length: xyz\r\n} {} {invalid Content-Length}
+    8 /invalid-expected-length {Host: localhost\r\nTransfer-Encoding: chunked\r\nX-Expected-Entity-Length: xyz\r\n} {} {invalid x-expected-entity-length}
+    9 /invalid-chunk {Host: localhost\r\nTransfer-Encoding: chunked\r\n} {z\r\n} {ChunkedDecode: invalid chunk length}
+    10 /invalid-chunk-suffix {Host: localhost\r\nTransfer-Encoding: chunked\r\n} {1z\r\n} {ChunkedDecode: invalid chunk length suffix}
+    11 /invalid-chunk-end {Host: localhost\r\nTransfer-Encoding: chunked\r\n} {1\r\nabc} {ChunkedDecode: missing CRLF after chunk data}
+    12 /invalid-url-%FF {Host: localhost\r\n} {} {invalid UTF-8 in request URL}
+    13 {/invalid-url-\xff} {Host: localhost\r\n} {} {Invalid UTF-8 encoding in url}
+    14 /negative-chunk {Host: localhost\r\nTransfer-Encoding: chunked\r\n} {-1\r\n} {ChunkedDecode: negative chunk length}
+    15 /overflowing-chunk {Host: localhost\r\nTransfer-Encoding: chunked\r\n} {ffffffffffffffffffffffff\r\n} {ChunkedDecode: chunk length overflow}
 } {
     test driver-bad-request-1.$suffix {malformed request emits one bounded diagnostic} \
         -constraints serverListen -setup {
@@ -155,14 +167,16 @@ foreach {suffix target headers reason} {
             nsv_set requestDiagnostic warnings {}
             set filter [ns_logctl register {apply {{severity timestamp message} {
                 if {$severity eq "Warning"
-                    && [regexp {invalid request|cannot parse request line|"Host" is missing} $message]} {
+                    && [regexp {invalid request|cannot parse request line|request header field|invalid or unsupported Transfer-Encoding|invalid Content-Length|invalid x-expected-entity-length|ChunkedDecode|Invalid UTF-8 encoding in url|decoded string contains invalid UTF-8} $message]} {
                     nsv_lappend requestDiagnostic warnings $message
                 }
             }}}]
         } -body {
             set padding [string repeat A 512]
             set headerLines [subst -nocommands -novariables $headers]
-            set reply [::leadingCRLF::exchange [list "GET $target HTTP/1.1\r\n${headerLines}X-Test: $padding\r\n\r\n"]]
+            set targetBytes [subst -nocommands -novariables $target]
+            set bodyBytes [subst -nocommands -novariables $body]
+            set reply [::leadingCRLF::exchange [list "GET $targetBytes HTTP/1.1\r\n${headerLines}X-Test: $padding\r\n\r\n$bodyBytes"]]
             set deadline [expr {[clock milliseconds] + 2000}]
             while {![regexp {invalid request: 400} [nsv_get requestDiagnostic warnings]]
                    && [clock milliseconds] < $deadline} {

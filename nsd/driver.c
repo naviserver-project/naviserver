@@ -76,25 +76,31 @@ typedef struct {
 } SpoolerStateMap;
 
 
+#define SINGLETON_HEADER(name, extract) \
+    { name, extract, "request header field \"" name "\" is provided more than once" }
+
 const struct {
     const char     *name;
     NsExtractedHeaderIndex  extract;
+    const char     *duplicateError;
 } singletonRequestHeaderFields[] = {
-    { "authorization",       NS_EXTRACTED_HEADER_AUTHORIZATION},
-    { "content-length",      NS_EXTRACTED_HEADER_CONTENT_LENGTH},
-    { "content-type",        NS_EXTRACTED_NONE},
-    { "expect",              NS_EXTRACTED_HEADER_EXPECT},
-    { "host",                NS_EXTRACTED_HEADER_HOST},
-    { "if-match",            NS_EXTRACTED_NONE},
-    { "if-modified-since",   NS_EXTRACTED_NONE},
-    { "if-none-match",       NS_EXTRACTED_NONE},
-    { "if-range",            NS_EXTRACTED_NONE},
-    { "if-unmodified-since", NS_EXTRACTED_NONE},
-    { "origin",              NS_EXTRACTED_NONE},
-    { "transfer-encoding",   NS_EXTRACTED_NONE },
-    { "upgrade",             NS_EXTRACTED_NONE},
-    { "user-agent",          NS_EXTRACTED_NONE}
+    SINGLETON_HEADER("authorization", NS_EXTRACTED_HEADER_AUTHORIZATION),
+    SINGLETON_HEADER("content-length", NS_EXTRACTED_HEADER_CONTENT_LENGTH),
+    SINGLETON_HEADER("content-type", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("expect", NS_EXTRACTED_HEADER_EXPECT),
+    SINGLETON_HEADER("host", NS_EXTRACTED_HEADER_HOST),
+    SINGLETON_HEADER("if-match", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("if-modified-since", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("if-none-match", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("if-range", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("if-unmodified-since", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("origin", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("transfer-encoding", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("upgrade", NS_EXTRACTED_NONE),
+    SINGLETON_HEADER("user-agent", NS_EXTRACTED_NONE)
 };
+
+#undef SINGLETON_HEADER
 
 /*
  * ServerMap maintains Host header to server mappings.
@@ -5950,21 +5956,21 @@ ChunkedDecode(Request *reqPtr, bool update)
         Ns_Log(DriverDebug, "ChunkedDecode: chunkLength %ld, <%s>", chunkLength, chunkStart);
 
         if (errno == ERANGE) {
-            Ns_Log(Warning, "ChunkedDecode: chunk length overflow");
+            reqPtr->parseError = "ChunkedDecode: chunk length overflow";
             *p = '\r';
             result = SOCK_BADREQUEST;
             break;
         }
 
         if (chunkLength < 0) {
-            Ns_Log(Warning, "ChunkedDecode: negative chunk length");
+            reqPtr->parseError = "ChunkedDecode: negative chunk length";
             *p = '\r';
             result = SOCK_BADREQUEST;
             break;
         }
 
         if (chunkStart == numberEnd) {
-            Ns_Log(Warning, "ChunkedDecode: invalid chunk length");
+            reqPtr->parseError = "ChunkedDecode: invalid chunk length";
             *p = '\r';
             result = SOCK_BADREQUEST;
             break;
@@ -5978,7 +5984,7 @@ ChunkedDecode(Request *reqPtr, bool update)
             numberEnd++;
         }
         if (*numberEnd != '\0' && *numberEnd != ';') {
-            Ns_Log(Warning, "ChunkedDecode: invalid chunk length suffix");
+            reqPtr->parseError = "ChunkedDecode: invalid chunk length suffix";
             *p = '\r';
             result = SOCK_BADREQUEST;
             break;
@@ -6067,7 +6073,7 @@ ChunkedDecode(Request *reqPtr, bool update)
         }
 
         if (dataEnd[0] != '\r' || dataEnd[1] != '\n') {
-            Ns_Log(Warning, "ChunkedDecode: missing CRLF after chunk data");
+            reqPtr->parseError = "ChunkedDecode: missing CRLF after chunk data";
             result = SOCK_BADREQUEST;
             break;
         }
@@ -6890,10 +6896,7 @@ EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
      * out. Reject and close.
      */
     if (contentLengthString != NULL && transferEncodingString != NULL) {
-        Ns_Log(Warning,
-               "invalid request framing: both Content-Length and "
-               "Transfer-Encoding are present in request \"%s\"",
-               reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+        reqPtr->parseError = "invalid request framing: both Content-Length and Transfer-Encoding are present";
         sockPtr->keep = NS_FALSE;
         return SOCK_BADREQUEST;
     }
@@ -6903,10 +6906,7 @@ EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
 
         if (ParseRequestTransferEncoding(transferEncodingString, &chunked) != NS_OK
             || !chunked) {
-            Ns_Log(Warning,
-                   "invalid or unsupported Transfer-Encoding \"%s\" in request \"%s\"",
-                   transferEncodingString,
-                   reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+            reqPtr->parseError = "invalid or unsupported Transfer-Encoding";
             sockPtr->keep = NS_FALSE;
             return SOCK_BADREQUEST;
         }
@@ -6926,10 +6926,7 @@ EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
             if (ParseStrictContentLength(s, &expected) == NS_OK && expected > 0u) {
                 reqPtr->expectedLength = expected;
             } else {
-                Ns_Log(Warning,
-                       "invalid x-expected-entity-length \"%s\" in request \"%s\"",
-                       s,
-                       reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+                reqPtr->parseError = "invalid x-expected-entity-length";
                 sockPtr->keep = NS_FALSE;
                 return SOCK_BADREQUEST;
             }
@@ -6939,10 +6936,7 @@ EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
         size_t length;
 
         if (ParseStrictContentLength(contentLengthString, &length) != NS_OK) {
-            Ns_Log(Warning,
-                   "invalid Content-Length \"%s\" in request \"%s\"",
-                   contentLengthString,
-                   reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+            reqPtr->parseError = "invalid Content-Length";
             sockPtr->keep = NS_FALSE;
             return SOCK_BADREQUEST;
         }
@@ -7948,8 +7942,7 @@ CheckSingletonHeaderFields(Sock *sockPtr)
 
             if (cmp == 0) {
                 if (++counts[i] > 1) {
-                    Ns_Log(Warning, "request header field \"%s\" is provided more than once. Request: \"%s\"\n",
-                           singletonName, sockPtr->reqPtr->request.line);
+                    sockPtr->reqPtr->parseError = singletonRequestHeaderFields[i].duplicateError;
                     return NS_ERROR;
 
                 }
@@ -8144,8 +8137,7 @@ SockSetServer(Sock *sockPtr)
         ) {
         if (!Ns_Valid_UTF8((const unsigned char *)reqPtr->request.url,
                            strlen(reqPtr->request.url), NULL)) {
-            Ns_Log(Warning, "Invalid UTF-8 encoding in url '%s'",
-                   reqPtr->request.url);
+            reqPtr->parseError = "Invalid UTF-8 encoding in url";
             goto bad_request;
         }
     }
