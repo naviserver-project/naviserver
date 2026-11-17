@@ -4331,6 +4331,7 @@ RequestFree(Sock *sockPtr, const char *caller)
     reqPtr->avail          = 0u;
     reqPtr->savedChar      = '\0';
     reqPtr->parseError     = NULL;
+    reqPtr->overlongLineLength = 0u;
     reqPtr->preHttp10      = NS_FALSE;
 
     /*
@@ -5701,19 +5702,22 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
          * Check, if bad request looks like a TLS handshake. If yes, there is
          * no need to print out the received buffer.
          */
-        if (unlikely(statusCode == 400)) {
+        if (unlikely(statusCode == 400
+                     || (statusCode < 500 && reqPtr->overlongLineLength != 0u))) {
             char peer[NS_IPADDR_SIZE];
             const char *bufferString = reqPtr->buffer.string;
 
             (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), peer, NS_IPADDR_SIZE);
 
-            if (reqPtr->buffer.length >= 3 && bufferString[0] == (char)0x16 && bufferString[1] >= 3 && bufferString[2] == 1) {
+            if (statusCode == 400 && reqPtr->buffer.length >= 3
+                && bufferString[0] == (char)0x16 && bufferString[1] >= 3 && bufferString[2] == 1) {
                 Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake "
                        "on a non-TLS connection",
                        statusCode, errMsg, peer);
 
             } else {
                 Tcl_DString dsReqLine, dsBuffer;
+                char lineLimit[80] = "";
                 const size_t excerptLimit = 256u;
                 const size_t requestLength = strlen(requestLine);
                 const size_t bufferLength = (size_t)reqPtr->buffer.length;
@@ -5723,9 +5727,14 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                  * on details of the received buffer. Keep the diagnostics in
                  * one entry so each rejection is one logged issue.
                  */
+                if (reqPtr->overlongLineLength != 0u) {
+                    snprintf(lineLimit, sizeof(lineLimit), ": request%s line is too long (%" PRIuz " bytes)",
+                             (sockPtr->flags & NS_CONN_LINETOOLONG) != 0u ? " header" : "",
+                             reqPtr->overlongLineLength);
+                }
                 Tcl_DStringInit(&dsReqLine);
                 Tcl_DStringInit(&dsBuffer);
-                Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s request '%s%s'%s"
+                Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s%s request '%s%s'%s"
                        " offsets: read %" PRIuz
                        " write %" PRIuz " content %" PRIuz " avail %" PRIuz
                        "; REQ BUFFER: %s%s",
@@ -5733,6 +5742,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                        peer,
                        reqPtr->parseError != NULL ? ": " : "",
                        reqPtr->parseError != NULL ? reqPtr->parseError : "",
+                       lineLimit,
                        Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, NS_FALSE, requestLine,
                                                  MIN(requestLength, excerptLimit)),
                        requestLength > excerptLimit ? "..." : "", legacy,
@@ -7067,15 +7077,9 @@ SockParse(Sock *sockPtr)
 
         if (unlikely((e - s) > drvPtr->maxline)) {
             sockPtr->keep = NS_FALSE;
-            if (reqPtr->request.line == NULL) {
-                Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
-                       drvPtr->maxline);
-                sockPtr->flags = NS_CONN_REQUESTURITOOLONG;
-                Ns_Log(Warning, "request line is too long (%d bytes)", (int)(e - s));
-            } else {
-                sockPtr->flags = NS_CONN_LINETOOLONG;
-                Ns_Log(Warning, "request header line is too long (%d bytes)", (int)(e - s));
-            }
+            sockPtr->flags = reqPtr->request.line == NULL
+                ? NS_CONN_REQUESTURITOOLONG : NS_CONN_LINETOOLONG;
+            reqPtr->overlongLineLength = (size_t)(e - s);
         }
 
         /*

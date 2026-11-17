@@ -443,6 +443,7 @@ typedef struct Request {
     size_t leftover;              /* Leftover bytes from earlier requests */
     Tcl_DString buffer;           /* Request and content buffer */
     const char *parseError;        /* Static request rejection diagnostic */
+    size_t overlongLineLength;    /* Length of the last line exceeding maxline */
     char   savedChar;             /* Character potentially clobbered by null character */
     bool   preHttp10;             /* Parsed without HTTP/1.x headers */
 

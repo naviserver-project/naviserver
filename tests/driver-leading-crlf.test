@@ -277,5 +277,48 @@ foreach {suffix target description expected} {
     } -result $expected
 }
 
+foreach {suffix requestLine headerLines status limitReason parseReason} {
+    1 {GET /@ HTTP/1.1} {} 414 {request line is too long} {}
+    2 {GET /__line_limit HTTP/1.1} {X-First: @\r\nX-Second: @\r\n} 431 {request header line is too long} {}
+    3 {GET /@ HTTP/bad extra} {} 400 {request line is too long} {version information invalid}
+    4 {GET /__line_limit HTTP/1.1} {@\r\n} 400 {request header line is too long} {Invalid Request Header}
+} {
+    test driver-line-limit-1.$suffix {overlong line produces one warning and preserves response} \
+        -constraints serverListen -setup {
+            set warningEnabled [ns_logctl severity Warning]
+            ns_logctl severity Warning on
+            nsv_set lineLimit warnings {}
+            set filter [ns_logctl register {apply {{severity timestamp message} {
+                if {$severity eq "Warning"
+                    && [regexp {line is too long|invalid request: 400} $message]} {
+                    nsv_lappend lineLimit warnings $message
+                }
+            }}}]
+        } -body {
+            set large [string repeat A [ns_config ns/module/nssock maxline]]
+            set line [string map [list @ $large] $requestLine]
+            set headers [string map [list @ $large] [subst -nocommands -novariables $headerLines]]
+            set reply [::leadingCRLF::exchange [list "$line\r\nHost: localhost\r\nConnection: close\r\n$headers\r\n"]]
+            set deadline [expr {[clock milliseconds] + 2000}]
+            while {[clock milliseconds] < $deadline} {
+                set warnings [nsv_get lineLimit warnings]
+                if {$status == 400 ? [regexp {invalid request: 400} $warnings] : [llength $warnings] > 0} {
+                    break
+                }
+                ns_sleep 10ms
+            }
+            set warnings [nsv_get lineLimit warnings]
+            set message [lindex $warnings 0]
+            list [lindex $reply 0] [llength $warnings] \
+                [regexp {from peer (::1|127\.0\.0\.1)} $message] \
+                [expr {[string first $limitReason $message] >= 0}] \
+                [expr {$parseReason eq "" || [string first $parseReason $message] >= 0}]
+        } -cleanup {
+            ns_logctl unregister $filter
+            ns_logctl severity Warning $warningEnabled
+            nsv_unset -nocomplain lineLimit
+        } -result [list $status 1 1 1 1]
+}
+
 namespace delete ::leadingCRLF
 cleanupTests
