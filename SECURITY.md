@@ -152,4 +152,3 @@ conducting destructive tests against production installations.
 
 Where possible, demonstrate the issue using a local test environment
 and the minimum input necessary to establish its impact.
-xi/Users/neumann/Documents/Codex/2026-06-30/fin/outputs/SECURITY.md
