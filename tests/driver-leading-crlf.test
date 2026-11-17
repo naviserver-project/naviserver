@@ -241,5 +241,41 @@ foreach {suffix description rejected expected} {
     } -result $expected
 }
 
+foreach {suffix target description expected} {
+    1 /__malformed_host {malformed Host logs once and falls back to the default server} {{200 test} 1 0}
+    2 {/__malformed_host-\xff} {malformed Host logs once when URL validation rejects the request} {{400 {}} 1 1}
+} {
+    test driver-malformed-host-1.$suffix $description -constraints serverListen -setup {
+        ns_register_proc GET /__malformed_host {ns_return 200 text/plain [ns_info server]}
+        set warningEnabled [ns_logctl severity Warning]
+        ns_logctl severity Warning on
+        nsv_set malformedHost warnings {}
+        set filter [ns_logctl register {apply {{severity timestamp message} {
+            if {$severity eq "Warning"
+                && ([string match {Cannot parse provided host header field *} $message]
+                    || [string match {invalid request: 400 */__malformed_host*} $message])} {
+                nsv_lappend malformedHost warnings $message
+            }
+        }}}]
+    } -body {
+        set targetBytes [subst -nocommands -novariables $target]
+        set reply [::leadingCRLF::exchange [list "GET $targetBytes HTTP/1.1\r\nHost: \[broken\r\nConnection: close\r\n\r\n"]]
+        set deadline [expr {[clock milliseconds] + 2000}]
+        while {[llength [nsv_get malformedHost warnings]] < $suffix
+               && [clock milliseconds] < $deadline} {
+            ns_sleep 10ms
+        }
+        set warnings [nsv_get malformedHost warnings]
+        list $reply \
+            [llength [lsearch -all -exact $warnings {Cannot parse provided host header field <[broken>}]] \
+            [llength [lsearch -all -glob $warnings {*Invalid UTF-8 encoding in url*}]]
+    } -cleanup {
+        ns_logctl unregister $filter
+        ns_logctl severity Warning $warningEnabled
+        nsv_unset -nocomplain malformedHost
+        ns_unregister_op GET /__malformed_host
+    } -result $expected
+}
+
 namespace delete ::leadingCRLF
 cleanupTests

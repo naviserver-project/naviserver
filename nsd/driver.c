@@ -7442,8 +7442,7 @@ SockParse(Sock *sockPtr)
  *      When requestPtr is non-NULL and refers to a plain request,
  *      requestPtr->host and requestPtr->port are updated.
  *
- *      Warning messages are logged on parse errors or when replacing
- *      an already set request host.
+ *      A warning is logged when replacing an already set request host.
  *
  *----------------------------------------------------------------------
  */
@@ -7462,7 +7461,6 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
     if (!Ns_HttpParseHost2(hostDs->string, NS_FALSE,
                            &hostStartConst,
                            &portStartConst, &end)) {
-        Ns_Log(Warning, "Cannot parse provided host header field <%s>", hostDs->string);
         success = NS_FALSE;
     } else {
         bool   ipLiteral, stripDot = NS_FALSE;
