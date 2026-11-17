@@ -36,6 +36,7 @@ proc ::leadingCRLF::response {chan} {
         # Driver-generated errors can omit Content-Length.
         if {$status == 400} {return [list $status {}]}
         if {![regexp -nocase {\r\ncontent-length: *([0-9]+)} $headers -> length]} {
+            if {$status in {413 414}} {return [list $status {}]}
             error "missing Content-Length: $headers"
         }
         set body [string range $data [expr {$boundary+4}] end]
@@ -318,6 +319,36 @@ foreach {suffix requestLine headerLines status limitReason parseReason} {
             ns_logctl severity Warning $warningEnabled
             nsv_unset -nocomplain lineLimit
         } -result [list $status 1 1 1 1]
+}
+
+foreach {status description} {
+    413 {oversized Expect request retains its driver response}
+    414 {too many headers retains its driver response}
+} {
+    test driver-rejection-response-1.$status $description -constraints serverListen -setup {
+        set warningEnabled [ns_logctl severity Warning]
+        ns_logctl severity Warning on
+        nsv_set rejectionResponse warnings {}
+        set filter [ns_logctl register {apply {{severity timestamp message} {
+            if {$severity eq "Warning"
+                && [regexp {invalid request: (413|414)|request returns (413|414)|partial write while sending response|could not encode response headers|cannot add (access-log|log) entry} $message]} {
+                nsv_lappend rejectionResponse warnings $message
+            }
+        }}}]
+    } -body {
+        if {$status == 413} {
+            set length [expr {[ns_config ns/module/nssock maxinput] + 1}]
+            set headers "Content-Length: $length\r\nExpect: 100-continue\r\n"
+        } else {
+            set headers [string repeat "X-Test: value\r\n" [ns_config ns/module/nssock maxheaders]]
+        }
+        set reply [::leadingCRLF::exchange [list "POST /__rejection_response HTTP/1.1\r\nHost: localhost\r\n$headers\r\n"]]
+        list $reply [nsv_get rejectionResponse warnings]
+    } -cleanup {
+        ns_logctl unregister $filter
+        ns_logctl severity Warning $warningEnabled
+        nsv_unset -nocomplain rejectionResponse
+    } -result [list [list $status {}] {}]
 }
 
 namespace delete ::leadingCRLF

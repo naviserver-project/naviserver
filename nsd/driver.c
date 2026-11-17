@@ -5340,7 +5340,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
 /*
  *----------------------------------------------------------------------
  *
- * NsAddNslogEntry --
+ * AddNslogEntry --
  *
  *      Add an entry to the access log, when the request is not handled by the
  *      trace of a connection thread.
@@ -5350,18 +5350,16 @@ SockError(Sock *sockPtr, SockState reason, int err)
  *       - 100 CONTINUE,
  *       - cases where the TRACE is not called in the connection thread.
  *
- *       Currently, the function is just used for the first two cases.
- *
  * Results:
- *      None.
+ *      A diagnostic if request data needed for logging is missing.
  *
  * Side effects:
  *      Potentially adding an entry to the access.log file.
  *
  *----------------------------------------------------------------------
  */
-void
-NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNUSED(headers))
+static const char *
+AddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr)
 {
     bool isConnConstructed;
     Conn conn;
@@ -5415,7 +5413,7 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
                  * No server owns this request. There is no access log to
                  * write to, but the driver can still send the response.
                  */
-                return;
+                return NULL;
             }
 
             Ns_ConnSetPeer((Ns_Conn*)&conn,
@@ -5450,12 +5448,9 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
              * where the initialization of the connection was not
              * finished. In this case connPtr is still NULL;
              */
-            Ns_Log(Warning, "--- non-trace access log entry: status code %d"
-                   " cannot add log entry; request provided %d headers provided %d",
-                   statusCode, sockPtr->reqPtr != NULL,
-                   sockPtr->reqPtr != NULL && sockPtr->reqPtr->headers != NULL);
-            isConnConstructed = NS_FALSE;
-            assert(connPtr == NULL);
+            return sockPtr->reqPtr == NULL
+                ? "cannot add access-log entry: request missing"
+                : "cannot add access-log entry: request headers missing";
         }
     } else {
         /*
@@ -5494,6 +5489,17 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
         } else {
             NsRunSelectedTraces(connPtr, "nslog:conntrace");
         }
+    }
+    return NULL;
+}
+
+void
+NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNUSED(headers))
+{
+    const char *diagnostic = AddNslogEntry(sockPtr, statusCode, connPtr);
+
+    if (diagnostic != NULL) {
+        Ns_Log(Warning, "non-trace access log entry for status %d: %s", statusCode, diagnostic);
     }
 }
 
@@ -5640,6 +5646,9 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
 {
     Tcl_DString  ds;
     Ns_Set      *responseHeaders;
+    const char  *accessDiagnostic;
+    bool         encoded;
+    ssize_t      sent = 0, tosend = 0;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(errMsg != NULL);
@@ -5656,17 +5665,13 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
            "msg <%s>",
            statusCode, errMsg);
 
-    /*
-     * The headers argument of NsAddNslogEntry() is currently unused.
-     */
-    NsAddNslogEntry(sockPtr, statusCode, NULL, NULL);
+    accessDiagnostic = AddNslogEntry(sockPtr, statusCode, NULL);
 
     Tcl_DStringInit(&ds);
-
-    if (NsDriverEncodeResponseHeaders(sockPtr, 1.0, statusCode,
-                                      responseHeaders, &ds, NULL)) {
+    encoded = NsDriverEncodeResponseHeaders(sockPtr, 1.0, statusCode,
+                                            responseHeaders, &ds, NULL);
+    if (encoded) {
         struct iovec iov;
-        ssize_t      sent, tosend;
 
         /*
          * For HTTP/1, ds contains the serialized headers. For HTTP/3,
@@ -5677,20 +5682,23 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
         tosend = (ssize_t)iov.iov_len;
 
         sent = NsDriverSend(sockPtr, &iov, 1, 0u);
-        if (sent < tosend) {
-            Ns_Log(Warning,
-                   "Driver: partial write while sending response; "
-                   "%" PRIdz " < %" PRIdz,
-                   sent, tosend);
-        }
-    } else {
-        Ns_Log(Warning,
-               "Driver: could not encode response headers for status %d",
-               statusCode);
     }
-
-    Tcl_DStringFree(&ds);
     Ns_SetFree(responseHeaders);
+
+    /*
+     * Keep secondary failures on the rejection entry where possible.
+     * Reuse the response buffer now that the send attempt is complete.
+     */
+    Tcl_DStringSetLength(&ds, 0);
+    if (!encoded) {
+        Tcl_DStringAppend(&ds, "; could not encode response headers", TCL_INDEX_NONE);
+    } else if (sent < tosend) {
+        Ns_DStringPrintf(&ds, "; partial write while sending response (%" PRIdz " < %" PRIdz ")",
+                         sent, tosend);
+    }
+    if (accessDiagnostic != NULL) {
+        Ns_DStringVarAppend(&ds, "; ", accessDiagnostic, NS_SENTINEL);
+    }
 
     /*
      * In case we have a request structure, complain in the system log about
@@ -5717,8 +5725,8 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
             if (statusCode == 400 && reqPtr->buffer.length >= 3
                 && bufferString[0] == (char)0x16 && bufferString[1] >= 3 && bufferString[2] == 1) {
                 Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake "
-                       "on a non-TLS connection",
-                       statusCode, errMsg, peer);
+                       "on a non-TLS connection%s",
+                       statusCode, errMsg, peer, ds.string);
 
             } else {
                 Tcl_DString dsReqLine, dsBuffer;
@@ -5742,7 +5750,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                 Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s%s request '%s%s'%s"
                        " offsets: read %" PRIuz
                        " write %" PRIuz " content %" PRIuz " avail %" PRIuz
-                       "; REQ BUFFER: %s%s",
+                       "; REQ BUFFER: %s%s%s",
                        statusCode, errMsg,
                        peer,
                        reqPtr->parseError != NULL ? ": " : "",
@@ -5757,7 +5765,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                        reqPtr->avail,
                        Ns_DStringAppendPrintable(&dsBuffer, NS_FALSE, NS_FALSE,
                                                  bufferString, MIN(bufferLength, excerptLimit)),
-                       bufferLength > excerptLimit ? "..." : "");
+                       bufferLength > excerptLimit ? "..." : "", ds.string);
                 Tcl_DStringFree(&dsReqLine);
                 Tcl_DStringFree(&dsBuffer);
             }
@@ -5778,29 +5786,36 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
             if (reason == SOCK_QUEUEFULL) {
                 if (poolName != NULL && *poolName != '\0') {
                     Ns_Log(Warning,
-                           "request returns %d (%s) in connection pool '%s': queue full; see access log for request%s",
-                           statusCode, errMsg, poolName, legacy);
+                           "request returns %d (%s) in connection pool '%s': queue full; see access log for request%s%s",
+                           statusCode, errMsg, poolName, legacy, ds.string);
                 } else {
                     Ns_Log(Warning,
-                           "request returns %d (%s): queue full; see access log for request%s",
-                           statusCode, errMsg, legacy);
+                           "request returns %d (%s): queue full; see access log for request%s%s",
+                           statusCode, errMsg, legacy, ds.string);
                 }
             } else {
                 if (poolName != NULL && *poolName != '\0') {
                     Ns_Log(Warning,
-                           "request returns %d (%s) in connection pool '%s': %s",
-                           statusCode, errMsg, poolName, requestLine);
+                           "request returns %d (%s) in connection pool '%s': %s%s",
+                           statusCode, errMsg, poolName, requestLine, ds.string);
                 } else {
                     Ns_Log(Warning,
-                           "request returns %d (%s): %s",
-                           statusCode, errMsg, requestLine);
+                           "request returns %d (%s): %s%s",
+                           statusCode, errMsg, requestLine, ds.string);
                 }
             }
+        } else if (ds.length != 0) {
+            char peer[NS_IPADDR_SIZE];
+
+            (void)ns_inet_ntop((struct sockaddr *)&sockPtr->sa, peer, sizeof(peer));
+            Ns_Log(Warning, "request returns %d (%s) from peer %s%s",
+                   statusCode, errMsg, peer, ds.string);
         }
     } else {
-        Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
-               statusCode, errMsg);
+        Ns_Log(Warning, "invalid request: %d (%s) - no request information available%s",
+               statusCode, errMsg, ds.string);
     }
+    Tcl_DStringFree(&ds);
 }
 
 /*
