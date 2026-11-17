@@ -734,6 +734,14 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         }
 
         /*
+         * Log legacy requests once admission is guaranteed and before
+         * handing ownership of the request to a connection thread.
+         */
+        if (sockPtr->reqPtr != NULL && sockPtr->reqPtr->preHttp10) {
+            Ns_Log(Notice, "pre-HTTP/1.0 request <%s>", sockPtr->reqPtr->request.line);
+        }
+
+        /*
          * Obtain an idle connection thread and publish the connection while
          * holding tqueue.lock.
          */

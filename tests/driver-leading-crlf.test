@@ -196,5 +196,50 @@ foreach {suffix target headers body reason} {
         } -result {{400 {}} 1 1 1 1 1}
 }
 
+foreach {suffix description rejected expected} {
+    1 {accepted pre-HTTP/1.0 request retains its notice} 0 {OK 1 Notice 1}
+    2 {rejected pre-HTTP/1.0 request reports one combined warning} 1 {{400 {}} 1 Warning 1}
+} {
+    test driver-legacy-request-1.$suffix $description -constraints serverListen -setup {
+        set noticeEnabled [ns_logctl severity Notice]
+        set warningEnabled [ns_logctl severity Warning]
+        ns_logctl severity Notice on
+        ns_logctl severity Warning on
+        ::leadingCRLF::setup
+        nsv_set legacyRequest diagnostics {}
+        set filter [ns_logctl register {apply {{severity timestamp message} {
+            if {$severity in {Notice Warning}
+                && [string first {/__leading_crlf} $message] >= 0
+                && [regexp {pre-HTTP/1\.0|invalid request: 400} $message]} {
+                nsv_lappend legacyRequest diagnostics [list $severity $message]
+            }
+        }}}]
+    } -body {
+        if {$rejected} {
+            set reply [::leadingCRLF::exchange [list "GET /__leading_crlf-\xff\r\n"]]
+            set pattern {invalid request: 400 .* from peer (::1|127\.0\.0\.1): Invalid UTF-8 encoding in url .*\[pre-HTTP/1\.0\]}
+            set finalSeverity Warning
+        } else {
+            set reply [lindex [nstest::http-0.9 -http "" -getbody 1 GET /__leading_crlf] end]
+            set pattern {^pre-HTTP/1\.0 request <GET /__leading_crlf>$}
+            set finalSeverity Notice
+        }
+        set deadline [expr {[clock milliseconds] + 2000}]
+        while {$finalSeverity ni [lmap entry [nsv_get legacyRequest diagnostics] {lindex $entry 0}]
+               && [clock milliseconds] < $deadline} {
+            ns_sleep 10ms
+        }
+        set diagnostics [nsv_get legacyRequest diagnostics]
+        lassign [lindex $diagnostics 0] severity message
+        list $reply [llength $diagnostics] $severity [regexp $pattern $message]
+    } -cleanup {
+        ns_logctl unregister $filter
+        nsv_unset -nocomplain legacyRequest
+        ::leadingCRLF::cleanup
+        ns_logctl severity Notice $noticeEnabled
+        ns_logctl severity Warning $warningEnabled
+    } -result $expected
+}
+
 namespace delete ::leadingCRLF
 cleanupTests

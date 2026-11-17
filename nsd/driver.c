@@ -4331,6 +4331,7 @@ RequestFree(Sock *sockPtr, const char *caller)
     reqPtr->avail          = 0u;
     reqPtr->savedChar      = '\0';
     reqPtr->parseError     = NULL;
+    reqPtr->preHttp10      = NS_FALSE;
 
     /*
      * In the normal request path, headers are usually cleared earlier.
@@ -5694,6 +5695,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
         const char  *requestLine = (reqPtr->request.line != NULL)
             ? reqPtr->request.line
             : NS_EMPTY_STRING;
+        const char  *legacy = reqPtr->preHttp10 ? " [pre-HTTP/1.0]" : "";
 
         /*
          * Check, if bad request looks like a TLS handshake. If yes, there is
@@ -5723,7 +5725,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                  */
                 Tcl_DStringInit(&dsReqLine);
                 Tcl_DStringInit(&dsBuffer);
-                Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s request '%s%s'"
+                Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s request '%s%s'%s"
                        " offsets: read %" PRIuz
                        " write %" PRIuz " content %" PRIuz " avail %" PRIuz
                        "; REQ BUFFER: %s%s",
@@ -5733,7 +5735,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                        reqPtr->parseError != NULL ? reqPtr->parseError : "",
                        Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, NS_FALSE, requestLine,
                                                  MIN(requestLength, excerptLimit)),
-                       requestLength > excerptLimit ? "..." : "",
+                       requestLength > excerptLimit ? "..." : "", legacy,
                        reqPtr->roff,
                        reqPtr->woff,
                        reqPtr->coff,
@@ -5761,12 +5763,12 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
             if (reason == SOCK_QUEUEFULL) {
                 if (poolName != NULL && *poolName != '\0') {
                     Ns_Log(Warning,
-                           "request returns %d (%s) in connection pool '%s': queue full; see access log for request",
-                           statusCode, errMsg, poolName);
+                           "request returns %d (%s) in connection pool '%s': queue full; see access log for request%s",
+                           statusCode, errMsg, poolName, legacy);
                 } else {
                     Ns_Log(Warning,
-                           "request returns %d (%s): queue full; see access log for request",
-                           statusCode, errMsg);
+                           "request returns %d (%s): queue full; see access log for request%s",
+                           statusCode, errMsg, legacy);
                 }
             } else {
                 if (poolName != NULL && *poolName != '\0') {
@@ -7217,7 +7219,7 @@ SockParse(Sock *sockPtr)
                      * Pre-HTTP/1.0 request.
                      */
                     reqPtr->coff = reqPtr->roff;
-                    Ns_Log(Notice, "pre-HTTP/1.0 request <%s>", reqPtr->request.line);
+                    reqPtr->preHttp10 = NS_TRUE;
                 }
 
             } else if (Ns_ParseHeader(reqPtr->headers, s, NULL, NULL) != NS_OK) {

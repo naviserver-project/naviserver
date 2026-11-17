@@ -444,6 +444,7 @@ typedef struct Request {
     Tcl_DString buffer;           /* Request and content buffer */
     const char *parseError;        /* Static request rejection diagnostic */
     char   savedChar;             /* Character potentially clobbered by null character */
+    bool   preHttp10;             /* Parsed without HTTP/1.x headers */
 
 } Request;
 
