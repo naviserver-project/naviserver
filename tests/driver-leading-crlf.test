@@ -322,7 +322,6 @@ foreach {suffix requestLine headerLines status limitReason parseReason} {
 }
 
 foreach {status description} {
-    413 {oversized Expect request retains its driver response}
     414 {too many headers retains its driver response}
 } {
     test driver-rejection-response-1.$status $description -constraints serverListen -setup {
@@ -336,12 +335,7 @@ foreach {status description} {
             }
         }}}]
     } -body {
-        if {$status == 413} {
-            set length [expr {[ns_config ns/module/nssock maxinput] + 1}]
-            set headers "Content-Length: $length\r\nExpect: 100-continue\r\n"
-        } else {
-            set headers [string repeat "X-Test: value\r\n" [ns_config ns/module/nssock maxheaders]]
-        }
+        set headers [string repeat "X-Test: value\r\n" [ns_config ns/module/nssock maxheaders]]
         set reply [::leadingCRLF::exchange [list "POST /__rejection_response HTTP/1.1\r\nHost: localhost\r\n$headers\r\n"]]
         list $reply [nsv_get rejectionResponse warnings]
     } -cleanup {
@@ -349,6 +343,50 @@ foreach {status description} {
         ns_logctl severity Warning $warningEnabled
         nsv_unset -nocomplain rejectionResponse
     } -result [list [list $status {}] {}]
+}
+
+foreach {mode description} {
+    expect {oversized Expect request emits one driver rejection warning}
+    body {oversized request without Expect emits one warning}
+    both {oversized Expect request with overlong header emits one combined warning}
+} {
+    test driver-body-limit-1.$mode $description -constraints serverListen -setup {
+        set warningEnabled [ns_logctl severity Warning]
+        ns_logctl severity Warning on
+        nsv_set bodyLimit warnings {}
+        set filter [ns_logctl register {apply {{severity timestamp message} {
+            if {$severity eq "Warning"
+                && [regexp {request too large|line is too long|invalid request: 413|request returns 413} $message]} {
+                nsv_lappend bodyLimit warnings $message
+            }
+        }}}]
+    } -body {
+        set maxinput [ns_config ns/module/nssock maxinput]
+        set length [expr {$maxinput + 1}]
+        if {$mode eq "body"} {
+            set reply [nstest::http -http 1.1 -partialresults 1 PUT /__body_limit [string repeat x $length]]
+        } else {
+            set headers ""
+            if {$mode eq "both"} {
+                set headers "X-Long: [string repeat x [ns_config ns/module/nssock maxline]]\r\n"
+            }
+            set reply [::leadingCRLF::exchange [list "PUT /__body_limit HTTP/1.1\r\nHost: localhost\r\n${headers}Content-Length: $length\r\nExpect: 100-continue\r\n\r\n"]]
+        }
+        set deadline [expr {[clock milliseconds] + 2000}]
+        while {[llength [nsv_get bodyLimit warnings]] == 0 && [clock milliseconds] < $deadline} {
+            ns_sleep 10ms
+        }
+        set warnings [nsv_get bodyLimit warnings]
+        set message [lindex $warnings 0]
+        list [lindex $reply 0] [llength $warnings] \
+            [expr {[string first "request too large, length=$length, maxinput=$maxinput" $message] >= 0}] \
+            [regexp {from peer (::1|127\.0\.0\.1)} $message] \
+            [expr {$mode ne "both" || [string first {request header line is too long} $message] >= 0}]
+    } -cleanup {
+        ns_logctl unregister $filter
+        ns_logctl severity Warning $warningEnabled
+        nsv_unset -nocomplain bodyLimit
+    } -result {413 1 1 1 1}
 }
 
 namespace delete ::leadingCRLF

@@ -734,20 +734,24 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         }
 
         /*
-         * Log legacy requests once admission is guaranteed and before
+         * Log request limits and legacy requests once admission is guaranteed
+         * and before
          * handing ownership of the request to a connection thread.
          */
         if (sockPtr->reqPtr != NULL) {
             const Request *reqPtr = sockPtr->reqPtr;
 
-            if (unlikely(reqPtr->overlongLineLength != 0u)) {
+            if (unlikely(reqPtr->overlongLineLength != 0u
+                         || (connPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0u)) {
+                Tcl_DString limits;
                 char peer[NS_IPADDR_SIZE];
 
+                Tcl_DStringInit(&limits);
+                NsDriverAppendRequestLimitDiagnostic(&limits, sockPtr, connPtr->flags);
                 (void)ns_inet_ntop((struct sockaddr *)&sockPtr->sa, peer, sizeof(peer));
-                Ns_Log(Warning, "request%s line is too long (%" PRIuz " bytes) from peer %s%s",
-                       (connPtr->flags & NS_CONN_LINETOOLONG) != 0u ? " header" : "",
-                       reqPtr->overlongLineLength, peer,
+                Ns_Log(Warning, "%s from peer %s%s", limits.string, peer,
                        reqPtr->preHttp10 ? " [pre-HTTP/1.0]" : "");
+                Tcl_DStringFree(&limits);
             } else if (reqPtr->preHttp10) {
                 Ns_Log(Notice, "pre-HTTP/1.0 request <%s>", reqPtr->request.line);
             }

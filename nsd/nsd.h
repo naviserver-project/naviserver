@@ -1979,6 +1979,10 @@ NS_EXTERN size_t NsDriversOfType(Ns_DList *dlPtr, const char *type)
 
 NS_EXTERN void NsDriverMapVirtualServers(void);
 
+NS_EXTERN void NsDriverAppendRequestLimitDiagnostic(Tcl_DString *dsPtr, const Sock *sockPtr,
+                                                     unsigned int flags)
+    NS_GNUC_NONNULL(1,2);
+
 NS_EXTERN ssize_t NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1,2);
 

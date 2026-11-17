@@ -5626,6 +5626,44 @@ h1_headersEncodeProc(Ns_Sock *sock,
 /*
  *----------------------------------------------------------------------
  *
+ * NsDriverAppendRequestLimitDiagnostic --
+ *
+ *      Append diagnostics for the request limits exceeded by this request.
+ *      The flags may already have been transferred to the connection.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends to the supplied Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsDriverAppendRequestLimitDiagnostic(Tcl_DString *dsPtr, const Sock *sockPtr,
+                                     unsigned int flags)
+{
+    const Request *reqPtr = sockPtr->reqPtr;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    assert(reqPtr != NULL);
+
+    if ((flags & NS_CONN_ENTITYTOOLARGE) != 0u) {
+        Ns_DStringPrintf(dsPtr, "request too large, length=%" PRIuz ", maxinput=%" TCL_LL_MODIFIER "d",
+                         reqPtr->contentLength, sockPtr->drvPtr->maxinput);
+    }
+    if (reqPtr->overlongLineLength != 0u) {
+        Ns_DStringPrintf(dsPtr, "%srequest%s line is too long (%" PRIuz " bytes)",
+                         dsPtr->length != 0 ? "; " : "",
+                         (flags & NS_CONN_LINETOOLONG) != 0u ? " header" : "",
+                         reqPtr->overlongLineLength);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockSendResponse --
  *
  *      Send an HTTP response directly to the client using the
@@ -5716,7 +5754,9 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
          * no need to print out the received buffer.
          */
         if (unlikely(statusCode == 400
-                     || (statusCode < 500 && reqPtr->overlongLineLength != 0u))) {
+                     || (statusCode < 500
+                         && (reqPtr->overlongLineLength != 0u
+                             || (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0u)))) {
             char peer[NS_IPADDR_SIZE];
             const char *bufferString = reqPtr->buffer.string;
 
@@ -5729,8 +5769,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                        statusCode, errMsg, peer, ds.string);
 
             } else {
-                Tcl_DString dsReqLine, dsBuffer;
-                char lineLimit[80] = "";
+                Tcl_DString dsReqLine, dsBuffer, limits;
                 const size_t excerptLimit = 256u;
                 const size_t requestLength = strlen(requestLine);
                 const size_t bufferLength = (size_t)reqPtr->buffer.length;
@@ -5740,14 +5779,11 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                  * on details of the received buffer. Keep the diagnostics in
                  * one entry so each rejection is one logged issue.
                  */
-                if (reqPtr->overlongLineLength != 0u) {
-                    snprintf(lineLimit, sizeof(lineLimit), ": request%s line is too long (%" PRIuz " bytes)",
-                             (sockPtr->flags & NS_CONN_LINETOOLONG) != 0u ? " header" : "",
-                             reqPtr->overlongLineLength);
-                }
+                Tcl_DStringInit(&limits);
+                NsDriverAppendRequestLimitDiagnostic(&limits, sockPtr, sockPtr->flags);
                 Tcl_DStringInit(&dsReqLine);
                 Tcl_DStringInit(&dsBuffer);
-                Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s%s request '%s%s'%s"
+                Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s%s%s request '%s%s'%s"
                        " offsets: read %" PRIuz
                        " write %" PRIuz " content %" PRIuz " avail %" PRIuz
                        "; REQ BUFFER: %s%s%s",
@@ -5755,7 +5791,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                        peer,
                        reqPtr->parseError != NULL ? ": " : "",
                        reqPtr->parseError != NULL ? reqPtr->parseError : "",
-                       lineLimit,
+                       limits.length != 0 ? ": " : "", limits.string,
                        Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, NS_FALSE, requestLine,
                                                  MIN(requestLength, excerptLimit)),
                        requestLength > excerptLimit ? "..." : "", legacy,
@@ -5766,6 +5802,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                        Ns_DStringAppendPrintable(&dsBuffer, NS_FALSE, NS_FALSE,
                                                  bufferString, MIN(bufferLength, excerptLimit)),
                        bufferLength > excerptLimit ? "..." : "", ds.string);
+                Tcl_DStringFree(&limits);
                 Tcl_DStringFree(&dsReqLine);
                 Tcl_DStringFree(&dsBuffer);
             }
@@ -6982,10 +7019,6 @@ EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
          * let later request handling generate the application-visible error.
          */
         if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
-            Ns_Log(Warning, "SockParse: request too large, length=%"
-                   PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
-                   reqPtr->length, sockPtr->drvPtr->maxinput);
-
             sockPtr->keep = NS_FALSE;
             sockPtr->flags |= NS_CONN_ENTITYTOOLARGE;
         }
