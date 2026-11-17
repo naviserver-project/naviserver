@@ -5403,14 +5403,19 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
              * since for global drivers, drvPtr->servPtr == NULL.
              */
             servPtr = sockPtr->servPtr;
-            if (servPtr == NULL) {
+            if (servPtr == NULL && sockPtr->drvPtr->defMapPtr != NULL) {
                 servPtr = sockPtr->drvPtr->defMapPtr->servPtr;
             }
             if (sockPtr->poolPtr != NULL) {
                 conn.poolPtr = sockPtr->poolPtr;
-            } else {
-                assert(servPtr != NULL);
+            } else if (servPtr != NULL) {
                 conn.poolPtr = servPtr->pools.defaultPtr;
+            } else {
+                /*
+                 * No server owns this request. There is no access log to
+                 * write to, but the driver can still send the response.
+                 */
+                return;
             }
 
             Ns_ConnSetPeer((Ns_Conn*)&conn,
@@ -8069,8 +8074,7 @@ SockSetServer(Sock *sockPtr)
          * There is no configured mapping.
          */
         if (sockPtr->servPtr == NULL) {
-            Ns_Log(Warning, "cannot determine server for request: \"%s\" (host \"%s\")\n",
-                   reqPtr->request.line, host);
+            reqPtr->parseError = "cannot determine server for request";
             goto bad_request;
         }
         /*
