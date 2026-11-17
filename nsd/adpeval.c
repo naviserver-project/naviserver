@@ -522,9 +522,9 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
         const char   *host, *port, *procs;
 
         query = Ns_ConnGetQuery(interp, itPtr->conn, NULL, NULL); /* currently ignoring encoding errors */
-        host = Ns_SetIGet(query, "dhost");
-        port = Ns_SetIGet(query, "dport");
-        procs = Ns_SetIGet(query, "dprocs");
+        host = (query != NULL) ? Ns_SetIGet(query, "dhost") : NULL;
+        port = (query != NULL) ? Ns_SetIGet(query, "dport") : NULL;
+        procs = (query != NULL) ? Ns_SetIGet(query, "dprocs") : NULL;
         if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
             /*
              * In case the debugger setup is not correct, avoid a call to

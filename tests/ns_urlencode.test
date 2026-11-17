@@ -693,6 +693,32 @@ test ns_parsequery-1.3 {invalid UTF-8} -body {
    unset -nocomplain _
 } -result {could not parse query: "return=%0a%0d%bf%f0%9f" NS_INVALID_UTF8}
 
+test ns_parsequery-invalid-fields {UTF-8 errors survive decoding subsequent fields} -body {
+    set errors {}
+    foreach query {%FFprobe=1&m=view m=view&%FFprobe=1 probe=%FF&m=view} {
+        catch {ns_parsequery -charset utf-8 -fallbackcharset utf-8 -- $query} result options
+        lappend errors [dict get $options -errorcode]
+    }
+    set errors
+} -result {NS_INVALID_UTF8 NS_INVALID_UTF8 NS_INVALID_UTF8}
+
+test ns_parsequery-fallback-fields {fallback retries the complete query after a decoding error} -body {
+    set results {}
+    foreach query {%FFprobe=1&m=view probe=%FF&m=view} {
+        set setId [ns_parsequery -charset utf-8 -fallbackcharset iso8859-1 -- $query]
+        lappend results [ns_set array $setId]
+        ns_set free $setId
+    }
+    set results
+} -result [list [list ÿprobe 1 m view] [list probe ÿ m view]]
+
+test ns_parsequery-empty-name {an explicitly empty name is valid} -body {
+    set setId [ns_parsequery {=1&m=view}]
+    set pairs [ns_set array $setId]
+    ns_set free $setId
+    set pairs
+} -result {{} 1 m view}
+
 test parsequery-1.4 {parsequery using urlencoding} -setup {
     ns_register_proc GET /parsequery {
         ns_conn urlencoding iso8859-1
@@ -705,17 +731,41 @@ test parsequery-1.4 {parsequery using urlencoding} -setup {
     ns_unregister_op GET /encoding
 } -result {200 {a=%e4%f6%fc&b=B iso-8859-1 äöü}}
 
-test parsequery-1.5 {parsequery using bad urlencoding} -setup {
+test parsequery-1.5 {invalid UTF-8 in an early query field reaches the request handler} -setup {
     ns_register_proc GET /parsequery {
-        #ns_conn urlencoding iso8859-1
-        set a [ns_queryget a]
-        ns_return 200 "text/plain" [list [ns_conn query] [ns_conn urlencoding] $a]
+        try {
+            ns_queryget a
+        } trap {NS_INVALID_UTF8} {message options} {
+            ns_return 400 text/plain [dict get $options -errorcode]
+            return
+        }
+        ns_return 200 text/plain "Query accepted"
     }
 } -body {
     nstest::http -getbody 1 GET "/parsequery?a=%e4%f6%fc&b=B"
 } -cleanup {
-    ns_unregister_op GET /encoding
-} -result {200 {a=%e4%f6%fc&b=B utf-8 {}}}
+    ns_unregister_op GET /parsequery
+} -result {400 NS_INVALID_UTF8}
+
+
+test parsequery-form-cache {failed form parsing does not cache partial fields} -setup {
+    ns_register_proc GET /parsequery-form-cache {
+        set reads {}
+        foreach options {{} {} {-fallbackcharset iso8859-1} {}} {
+            if {[catch {ns_conn form {*}$options} form details]} {
+                lappend reads [dict get $details -errorcode]
+            } else {
+                lappend reads [ns_set array $form]
+            }
+        }
+        ns_return 200 text/plain $reads
+    }
+} -body {
+    nstest::http -getbody 1 GET "/parsequery-form-cache?probe=%FF&m=view"
+} -cleanup {
+    ns_unregister_op GET /parsequery-form-cache
+} -result [list 200 [list NS_INVALID_UTF8 NS_INVALID_UTF8 [list probe ÿ m view] [list probe ÿ m view]]]
+
 
 unset unreservedChars
 

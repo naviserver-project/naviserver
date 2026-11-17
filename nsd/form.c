@@ -527,6 +527,12 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
         if (status == NS_ERROR) {
             const char *errorInput = (toParse != NULL) ? toParse : "";
 
+            /*
+             * A failed parse may leave valid fields or upload metadata behind.
+             * Discard the partial result so a later call can retry decoding.
+             */
+            Ns_ConnClearQuery(conn);
+
             if (fct == FORM_CONTENT_JSON && *errorInput != '\0') {
                 Ns_TclPrintfResult(interp, "%s", errDs.string);
                 Tcl_SetErrorCode(interp, "NS_INVALID_JSON", NULL);
@@ -725,6 +731,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
 
     while (p != NULL) {
         char *v, *k;
+        Ns_ReturnCode keyStatus, valueStatus = NS_OK;
 
         k = p;
         p = strchr(p, INTCHAR('&'));
@@ -736,11 +743,11 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
             *v = '\0';
         }
         Tcl_DStringSetLength(&kds, 0);
-        k = Ns_UrlQueryDecode(&kds, k, encoding, &result);
+        k = Ns_UrlQueryDecode(&kds, k, encoding, &keyStatus);
         if (v != NULL) {
             Tcl_DStringSetLength(&vds, 0);
 
-            (void) Ns_UrlQueryDecode(&vds, v+1, encoding, &result);
+            (void) Ns_UrlQueryDecode(&vds, v+1, encoding, &valueStatus);
             *v = '=';
             v = vds.string;
             if (translate) {
@@ -765,8 +772,10 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
                 }
             }
         }
-        if (result == NS_OK) {
+        if (keyStatus == NS_OK && valueStatus == NS_OK) {
             (void) Ns_SetPut(set, k, v);
+        } else {
+            result = NS_ERROR;
         }
         if (p != NULL) {
             *p++ = '&';
