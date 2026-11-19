@@ -184,7 +184,7 @@ test http-1.6.2 { HTTP/1.0 GET not-existing vhost + custom error page} -constrai
 } -match glob -result {404 15 {CUSTOM 404 page}}
 
 test http-1.6.3 { HTTP/1.0 HEAD not-existing vhost + custom error page} -constraints serverListen -body {
-    nstest::http -getbody 1 \
+    nstest::http -timeout 5s -getbody 1 \
         -setheaders [list host testvhost:[ns_config test listenport]] \
         -getheaders {content-length} \
         HEAD /noexist
