@@ -208,6 +208,23 @@ test http-1.6.5 { HTTP/1.0 HEAD not-existing vhost + custom error page + query} 
         HEAD /noexist?x=1
 } -match glob -result {404 15}
 
+# Sequential short requests can arrive while the worker handling the
+# preceding request is returning to idle. No request may be stranded in
+# the waiting queue while that worker sleeps on its condition variable.
+test http-1.6.5a {vhost request handoff while a worker returns to idle} -constraints serverListen -body {
+    for {set i 0} {$i < 2000} {incr i} {
+        set method [expr {$i % 2 ? "HEAD" : "GET"}]
+        set result [nstest::http -getbody 1 \
+            -setheaders [list host testvhost:[ns_config test listenport]] \
+            -getheaders {content-length} $method /noexist?x=1]
+        set expected [expr {$method eq "HEAD" ? [list 404 15] : [list 404 15 {CUSTOM 404 page}]}]
+        if {$result ne $expected} {
+            error "iteration $i ($method): expected <$expected>, got <$result>; threads [ns_server -server testvhost threads]; waiting [ns_server -server testvhost waiting]"
+        }
+    }
+    set result OK
+} -result OK
+
 test http-1.6.6 { HTTP/1.0 POST not-existing vhost + custom error page + query} -constraints serverListen -body {
     nstest::http -getbody 1 \
         -setheaders [list host testvhost:[ns_config test listenport]] \

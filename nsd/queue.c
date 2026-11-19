@@ -758,8 +758,10 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         }
 
         /*
-         * Obtain an idle connection thread and publish the connection while
-         * holding tqueue.lock.
+         * Hold the handoff mutex until the request is assigned to an idle
+         * thread or published on wqueue. Workers hold this same mutex from
+         * checking wqueue through publishing themselves as idle. Lock order
+         * when both are needed is tqueue.lock, then wqueue.lock.
          */
         Ns_MutexLock(&poolPtr->tqueue.lock);
 
@@ -776,9 +778,8 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             Ns_AtomicUint32StoreRelease(&argPtr->state, (uint32_t)connThread_assigned);
         }
 
-        Ns_MutexUnlock(&poolPtr->tqueue.lock);
-
         if (argPtr != NULL) {
+            Ns_MutexUnlock(&poolPtr->tqueue.lock);
             /*
              * An idle thread was selected and its connection was published
              * under tqueue.lock. Check whether the pool should nevertheless
@@ -809,6 +810,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             poolPtr->wqueue.wait.lastPtr = connPtr;
             (void)Ns_AtomicUint32FetchAddRelaxed(&poolPtr->wqueue.wait.num, 1u);
             Ns_MutexUnlock(&poolPtr->wqueue.lock);
+            Ns_MutexUnlock(&poolPtr->tqueue.lock);
 
             Ns_MutexLock(&poolPtr->threads.lock);
             poolPtr->stats.queued++;
@@ -2574,39 +2576,39 @@ NsConnThread(void *arg)
         assert(argPtr->connPtr == NULL);
         assert(Ns_AtomicUint32LoadRelaxed(&argPtr->state) == (uint32_t)connThread_ready);
 
+        /*
+         * Serialize the entire queued-work/idle transition with dispatchers.
+         * Otherwise a dispatcher can see no idle thread, then enqueue work
+         * after this worker saw an empty queue but before it becomes idle.
+         */
+        Ns_MutexLock(tqueueLockPtr);
+        connPtr = NULL;
+        Ns_MutexLock(wqueueLockPtr);
         if (poolPtr->wqueue.wait.firstPtr != NULL) {
-            connPtr = NULL;
-            Ns_MutexLock(wqueueLockPtr);
-            if (poolPtr->wqueue.wait.firstPtr != NULL) {
-                /*
-                 * There are waiting requests.  Pull the first connection of
-                 * the waiting list and assign it to the ConnThreadArg.
-                 */
-                connPtr = poolPtr->wqueue.wait.firstPtr;
-                poolPtr->wqueue.wait.firstPtr = connPtr->nextPtr;
-                if (poolPtr->wqueue.wait.lastPtr == connPtr) {
-                    poolPtr->wqueue.wait.lastPtr = NULL;
-                }
-                connPtr->nextPtr = NULL;
-                (void)Ns_AtomicUint32FetchSubAcqRel(&poolPtr->wqueue.wait.num, 1u);
-
-                Ns_AtomicUint32StoreRelaxed(&connPtr->state,
-                                            (uint32_t)NS_CONN_STATE_PREPARING);
+            /*
+             * There are waiting requests.  Pull the first connection of
+             * the waiting list and assign it to the ConnThreadArg.
+             */
+            connPtr = poolPtr->wqueue.wait.firstPtr;
+            poolPtr->wqueue.wait.firstPtr = connPtr->nextPtr;
+            if (poolPtr->wqueue.wait.lastPtr == connPtr) {
+                poolPtr->wqueue.wait.lastPtr = NULL;
             }
-            Ns_MutexUnlock(wqueueLockPtr);
+            connPtr->nextPtr = NULL;
+            (void)Ns_AtomicUint32FetchSubAcqRel(&poolPtr->wqueue.wait.num, 1u);
 
-            if (connPtr != NULL) {
-                Ns_MutexLock(tqueueLockPtr);
-                argPtr->connPtr = connPtr;
-                Ns_DListAppend(&connPtr->poolPtr->inuse, connPtr);
-                Ns_AtomicUint32StoreRelease(&argPtr->state,
-                                            (uint32_t)connThread_busy);
-                Ns_MutexUnlock(tqueueLockPtr);
-            }
+            Ns_AtomicUint32StoreRelaxed(&connPtr->state,
+                                        (uint32_t)NS_CONN_STATE_PREPARING);
+        }
+        Ns_MutexUnlock(wqueueLockPtr);
 
-            fromQueue = (connPtr != NULL);
-        } else {
-            fromQueue = NS_FALSE;
+        fromQueue = (connPtr != NULL);
+        if (fromQueue) {
+            argPtr->connPtr = connPtr;
+            Ns_DListAppend(&connPtr->poolPtr->inuse, connPtr);
+            Ns_AtomicUint32StoreRelease(&argPtr->state,
+                                        (uint32_t)connThread_busy);
+            Ns_MutexUnlock(tqueueLockPtr);
         }
 
         if (argPtr->connPtr == NULL) {
@@ -2619,9 +2621,8 @@ NsConnThread(void *arg)
             Ns_MutexUnlock(threadsLockPtr);
 
             /*
-             * Serialize insertion into the idle-thread queue.
+             * tqueueLockPtr is still held from the queued-work check.
              */
-            Ns_MutexLock(tqueueLockPtr);
 
             /*
              * Obtain the condition-variable mutex before making this thread
