@@ -2312,18 +2312,26 @@ WakeupConnThreads(ConnPool *poolPtr) {
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
-    Ns_MutexLock(&poolPtr->tqueue.lock);
+    /*
+     * Thread slots live for the lifetime of the pool. Inspect their atomic
+     * state without tqueue.lock: an idle trace can hold argPtr->lock while
+     * calling diagnostics which acquire tqueue.lock. Holding tqueue.lock
+     * while waiting for that worker would deadlock shutdown.
+     *
+     * Shutdown is already published before this scan. A worker becoming
+     * idle after its slot was inspected observes shutdown before waiting.
+     * A slot changing state before we signal needs at most a harmless
+     * spurious wakeup; no queue links or connection fields are accessed.
+     */
     for (i = 0; i < poolPtr->threads.max; i++) {
         ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
 
-        if (Ns_AtomicUint32LoadRelaxed(&argPtr->state) == connThread_idle) {
-            assert(argPtr->connPtr == NULL);
+        if (Ns_AtomicUint32LoadAcquire(&argPtr->state) == connThread_idle) {
             Ns_MutexLock(&argPtr->lock);
             Ns_CondSignal(&argPtr->cond);
             Ns_MutexUnlock(&argPtr->lock);
         }
     }
-    Ns_MutexUnlock(&poolPtr->tqueue.lock);
 }
 
 

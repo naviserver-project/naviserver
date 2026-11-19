@@ -1,0 +1,207 @@
+# -*- Tcl -*-
+# Run shutdown regressions in a disposable child so a broken lock order
+# cannot hang the main regression-test server. No external helper is needed.
+if {$::tcl_version < 8.6} {package require try}
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+
+testConstraint idleCallbackSubprocess [expr {$::tcl_platform(platform) eq "unix"}]
+
+namespace eval ::idleCallbackTest {
+    variable sequence 0
+
+    proc writeFile {path text} {
+        set f [open $path w]
+        try {puts $f $text} finally {close $f}
+    }
+    proc readFile {path} {
+        if {![file exists $path]} {return {}}
+        set f [open $path r]
+        try {read $f} finally {close $f}
+    }
+    proc waitFor {condition description {milliseconds 5000}} {
+        set deadline [expr {[clock milliseconds] + $milliseconds}]
+        while {![uplevel 1 $condition]} {
+            if {[clock milliseconds] >= $deadline} {
+                error "timed out waiting for $description"
+            }
+            ns_sleep 5ms
+        }
+    }
+    proc ended {channel} {
+        # Nonblocking reads notice child exit without waiting in close().
+        read $channel
+        return [eof $channel]
+    }
+
+    proc run {scenario} {
+        variable sequence
+        set name idle-callback-[pid]-[incr sequence]
+        set directory [::tcltest::makeDirectory $name]
+        set root [file normalize [file join [ns_config test home] ..]]
+        set pipe {}
+        set children {}
+        set channel {}
+        set reservation {}
+        set address [ns_config test loopback]
+        set log [file join $directory child.log]
+        try {
+            # Use the test server's selected IPv4/IPv6 loopback. Connchan
+            # supports both families independently of Tcl's socket support.
+            set listener [ns_connchan listen -bind $address 0 {apply {{channel} {return 0}}}]
+            set reservation [dict get $listener channel]
+            set port [dict get $listener port]
+            ns_connchan close $reservation
+            set reservation {}
+
+            set setup [file join $directory setup.tcl]
+            writeFile $setup {
+                proc idle_shutdown_probe {} {
+                    set directory [ns_config idle-probe directory]
+                    # Gate only the first idle trace, retaining its evidence.
+                    if {[file exists [file join $directory entered]]} {return}
+                    set f [open [file join $directory entered] w]; close $f
+                    set deadline [expr {[clock milliseconds] + 10000}]
+                    while {![file exists [file join $directory release]]} {
+                        if {[clock milliseconds] >= $deadline} {
+                            error "parent did not release idle callback"
+                        }
+                        ns_sleep 1ms
+                    }
+                    # Takes tqueue.lock while the trace holds argPtr->lock.
+                    ns_server active
+                    set f [open [file join $directory callback-done] w]; close $f
+                }
+                ns_ictl trace idle idle_shutdown_probe
+                ns_register_proc GET /probe {ns_return 200 text/plain OK}
+            }
+            set config [file join $directory config.tcl]
+            set f [open $config w]
+            try {
+                puts $f [list set address $address]
+                puts $f [list set directory $directory]
+                puts $f [list set root $root]
+                puts $f [list set setup $setup]
+                puts $f [list set port $port]
+                puts $f [list set nssock [ns_config ns/modules nssock]]
+                puts $f {
+                    ns_section ns/parameters {
+                        ns_param home $directory
+                        ns_param tcllibrary [file join $root tcl]
+                        ns_param logdir $directory
+                        ns_param pidfile [file join $directory server.pid]
+                        ns_param lognotice true
+                    }
+                    ns_section idle-probe {ns_param directory $directory}
+                    ns_section ns/servers {ns_param idle-test {Idle callback regression}}
+                    ns_section ns/modules {ns_param nssock $nssock}
+                    ns_section ns/module/nssock {
+                        ns_param address $address
+                        ns_param port $port
+                        ns_param defaultserver idle-test
+                        ns_param deferaccept 0
+                    }
+                    ns_section ns/server/idle-test {
+                        ns_param serverdir $directory
+                        ns_param minthreads 1
+                        ns_param maxthreads 1
+                        ns_param threadtimeout 100ms
+                    }
+                    ns_section ns/server/idle-test/tcl {
+                        ns_param initfile [file join $root nsd init.tcl]
+                        ns_param initcmds [list source $setup]
+                    }
+                }
+            } finally {close $f}
+            set script [file join $directory command.tcl]
+            writeFile $script {
+                set f [open [file join [ns_config idle-probe directory] ready] w]; close $f
+                vwait forever
+            }
+            set executable [file join $root nsd nsd]
+            set pipe [open [list | $executable -c -d -t $config $script 2> $log] r]
+            set children [pid $pipe]
+            fconfigure $pipe -blocking 0
+            waitFor {file exists [file join $directory ready]} {child startup}
+            waitFor {file exists [file join $directory entered]} {first idle callback}
+
+            if {$scenario eq "shutdown"} {
+                foreach child $children {ns_kill $child 15}
+                waitFor {expr {[string first {server [idle-test]: stopping} [readFile $log]] >= 0}} \
+                    {shutdown reaching the connection pool}
+                # The notice precedes WakeupConnThreads. Keep the trace gated
+                # briefly to allow shutdown to enter its worker-wakeup scan.
+                ns_sleep 100ms
+                writeFile [file join $directory release] {}
+            } else {
+                # Send a request while the sole worker is inside its trace.
+                set channel [ns_connchan connect -timeout 2s $address $port]
+                set host $address
+                if {[string first : $address] >= 0} {set host "\[$address\]"}
+                set pending "GET /probe HTTP/1.0\r\nHost: $host:$port\r\nConnection: close\r\n\r\n"
+                waitFor {
+                    set sent [ns_connchan write $channel $pending]
+                    set pending [string range $pending $sent end]
+                    expr {$pending eq ""}
+                } {request write} 3000
+                ns_sleep 100ms
+                writeFile [file join $directory release] {}
+                set response {}
+                waitFor {
+                    append response [ns_connchan read $channel]
+                    regexp {\r\n\r\nOK$} $response
+                } {response to request sent during idle trace} 3000
+                if {![regexp {^HTTP/1\.[01] 200 } $response]
+                    || ![regexp {\r\n\r\nOK$} $response]} {
+                    error "unexpected child response: $response"
+                }
+                foreach child $children {ns_kill $child 15}
+            }
+            waitFor {ended $pipe} {child shutdown}
+            fconfigure $pipe -blocking 1
+            try {
+                close $pipe
+            } trap CHILDKILLED {message options} {
+                if {[lindex [dict get $options -errorcode] 2] ne "SIGTERM"} {
+                    return -options $options $message
+                }
+            } finally {
+                set pipe {}
+                set children {}
+            }
+            if {![file exists [file join $directory callback-done]]} {
+                error "idle callback diagnostics did not finish"
+            }
+            return "PASS $scenario"
+        } on error {message options} {
+            set diagnostics [string range [readFile $log] end-11999 end]
+            dict append options -errorinfo "\nChild log:\n$diagnostics"
+            return -options $options "$message\nChild log:\n$diagnostics"
+        } finally {
+            foreach handle [list $channel $reservation] {
+                if {$handle ne ""} {catch {ns_connchan close $handle}}
+            }
+            if {$pipe ne ""} {
+                # Only our own, unreaped pipeline child can have this PID.
+                foreach child $children {catch {ns_kill -nocomplain $child 9}}
+                catch {waitFor {ended $pipe} {killed child exit} 2000}
+                catch {close $pipe}
+            }
+            ::tcltest::removeDirectory $name
+        }
+    }
+}
+
+test idle-callback-1.1 {shutdown does not hold the queue lock while waiting for idle diagnostics} \
+    -constraints idleCallbackSubprocess -body {
+        ::idleCallbackTest::run shutdown
+    } -result {PASS shutdown}
+
+test idle-callback-1.2 {requests arriving during an idle callback are serviced afterward} \
+    -constraints idleCallbackSubprocess -body {
+        ::idleCallbackTest::run dispatch
+    } -result {PASS dispatch}
+
+namespace delete ::idleCallbackTest
+cleanupTests
