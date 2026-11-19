@@ -82,6 +82,7 @@ typedef struct LogFilter {
 
 typedef struct LogCache {
     bool        hold;         /* Flag: keep log entries in cache */
+    bool        inTclLog;     /* Tcl log callback is active on this thread */
     bool        finalizing;   /* Flag: log is finalizing, no more ops allowed */
     int         count;        /* Number of entries held in the cache */
     time_t      gtime;        /* For GMT time calculation */
@@ -716,6 +717,22 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
          * Append new or reuse log entry record.
          */
         cachePtr = GetCache();
+        if (cachePtr->inTclLog) {
+            Tcl_DString ds;
+            Ns_Time stamp;
+
+            /*
+             * Interpreter initialization and Tcl callbacks can log. Avoid
+             * reentering the filters or modifying the active log buffer.
+             */
+            Tcl_DStringInit(&ds);
+            Ns_DStringVPrintf(&ds, fmt, apSrc);
+            Ns_GetTime(&stamp);
+            (void)LogToFile(INT2PTR(STDERR_FILENO), severity, &stamp,
+                            ds.string, (size_t)ds.length);
+            Tcl_DStringFree(&ds);
+            return;
+        }
         if (cachePtr->finalizing) {
             Tcl_DString ds;
 
@@ -2257,6 +2274,9 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         Tcl_DString           ds, ds2;
         Tcl_Interp           *interp;
         const Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
+        LogCache            *cachePtr = GetCache();
+
+        cachePtr->inTclLog = NS_TRUE;
 
         /*
          * Try to obtain an interpreter:
@@ -2315,6 +2335,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
 
             status = (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
         }
+        cachePtr->inTclLog = NS_FALSE;
     }
     return status;
 }

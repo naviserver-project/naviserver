@@ -365,6 +365,28 @@ test ns_log-thread-worker {registered workers log without recursive initializati
     ns_logctl severity notice $identityNotice
 } -result 1
 
+
+test ns_log-recursive-callback {logging inside a Tcl log callback does not reenter filters} -setup {
+    set warningEnabled [ns_logctl severity Warning]
+    ns_logctl severity Warning on
+    nsv_set recursiveLog calls 0
+    set filter [ns_logctl register {apply {{severity timestamp message} {
+        if {$message in {recursive-log-outer recursive-log-inner}} {
+            nsv_incr recursiveLog calls
+            if {$message eq "recursive-log-outer"} {
+                ns_log Warning recursive-log-inner
+            }
+        }
+    }}}]
+} -body {
+    ns_log Warning recursive-log-outer
+    nsv_get recursiveLog calls
+} -cleanup {
+    ns_logctl unregister $filter
+    ns_logctl severity Warning $warningEnabled
+    nsv_unset -nocomplain recursiveLog
+} -result 1
+
 cleanupTests
 
 # Local variables:
