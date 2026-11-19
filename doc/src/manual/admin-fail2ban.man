@@ -1,0 +1,329 @@
+[include version_include.man]
+[manpage_begin admin-fail2ban n [vset version]]
+[moddesc {NaviServer Manual}]
+[titledesc {Protecting NaviServer with Fail2Ban}]
+
+[description]
+
+
+[uri https://github.com/fail2ban/fail2ban/wiki Fail2Ban] monitors log files
+for repeated events, such as failed logins or known probes, and temporarily
+blocks the source IP addresses.
+
+This guide describes an optional integration with Fail2Ban on Linux.
+The guide described Configure your application to log known probe requests. Fail2Ban watches
+for those log entries and applies temporary bans at the host firewall.
+Ordinary 404 responses and normal crawling or harvesting should not
+contribute to the ban count.
+
+[section {Emit a probe marker in NaviServer}]
+
+From a request handler or filter, emit this line only after your application
+has classified the request as a probe:
+
+[example {
+ns_log Notice "F2B_NAVISERVER_PROBE ip=[ns_conn peeraddr -source direct]"
+}]
+
+[para]
+
+Keep the message fixed apart from the IP address. Do not include URLs,
+headers, or other client-supplied text. Use the direct peer address when
+NaviServer receives the client connection directly, including Docker
+forwarding that preserves the source address. Behind a reverse proxy, the
+direct peer may be the proxy itself. In that case, establish the client
+address through a trusted proxy configuration and enforce the ban where
+packets still carry that source address. An application log can name a
+client that the firewall on the backend host cannot see.
+
+[section {Install the filter}]
+
+In [file /etc/fail2ban/filter.d/naviserver-probes.conf], install [emph one] of
+the following versions. For the standard installation under
+[const {/usr/local/ns}], the default system log is
+[file /usr/local/ns/log/nsd.log]. If NaviServer writes elsewhere, replace
+that path in both commands below and in the jail's [const logpath] setting.
+For Docker, use the path as seen from the host. Check the actual bytes in
+the log to choose the filter:
+
+[example {
+ head -n 3 /usr/local/ns/log/nsd.log | sed -n l
+}]
+
+[para]
+
+These examples expect NaviServer's single-line layout: a timestamp with
+second precision, then two bracketed fields (process/thread ID and thread
+name), then the severity and message. Logs with microseconds, relative
+timestamps, a different prefix, or expanded messages need a corresponding
+change. If logging deduplicates identical messages, verify that repeated
+probe events still produce distinct marker lines.
+
+[subsection {Filter Without ANSI colors}]
+
+Example line:
+
+[example {
+[19/Nov/2026:10:23:43][7.37987][-nscp:1-] Notice: F2B_NAVISERVER_PROBE ip=192.0.2.10
+}]
+
+[para]
+
+Filter:
+
+[example {
+[Definition]
+datepattern = ^\[%%d/%%b/%%Y:%%H:%%M:%%S\]
+failregex = ^\[[^\]\r\n]+\]\[[^\]\r\n]+\] Notice: F2B_NAVISERVER_PROBE ip=<ADDR>$
+}]
+
+[subsection {Filter With ANSI colors}]
+
+In the colored NaviServer format used on OpenACS, an ANSI color sequence
+precedes the timestamp. The prefix color is reset after the space following
+the thread name, a second color sequence precedes the severity, and a final
+reset ends the message. A byte-escaped example (the actual log contains ESC
+bytes, not the string [const {\x1b}]):
+
+[example {
+\x1b[0;32m[19/Nov/2026:10:23:43][7.37987][-nscp:1-] \x1b[0m\x1b[0;39mNotice: F2B_NAVISERVER_PROBE ip=192.0.2.10\x1b[0m
+}]
+
+[para]
+
+Filter:
+
+[example {
+[Definition]
+datepattern = ^\x1b\[[0-9]+;[0-9]+m\[%%d/%%b/%%Y:%%H:%%M:%%S\]
+failregex = ^\[[^\]\r\n]+\]\[[^\]\r\n]+\] \x1b\[0m\x1b\[[0-9]+;[0-9]+mNotice: F2B_NAVISERVER_PROBE ip=<ADDR>\x1b\[0m$
+}]
+
+[para]
+
+In both variants, Fail2Ban extracts and removes the timestamp before
+applying the anchored [const {failregex}]. The colored date pattern also
+consumes the initial color sequence so the remaining line starts at the
+process/thread field. The doubled percent signs are required in the
+configuration file. Fail2Ban's [const {<ADDR>}] tag matches IPv4 and IPv6
+literals.
+
+[para]
+
+Test against the real logfile before enabling the jail:
+
+[example {
+fail2ban-regex /usr/local/ns/log/nsd.log /etc/fail2ban/filter.d/naviserver-probes.conf --print-all-matched
+}]
+
+[para]
+
+Check that a known marker matches and unrelated lines do not. If you see no
+date matches, inspect the raw log prefix again. If dates match but a marker
+does not, check the bracketed fields, spacing, severity, and the trailing
+color reset.
+
+[section {Configure the jail on the host}]
+
+Create [file /etc/fail2ban/jail.d/naviserver-probes.local]:
+
+[example {
+[naviserver-probes]
+enabled  = false
+filter   = naviserver-probes
+backend  = auto
+logpath  = /usr/local/ns/log/nsd.log tail
+usedns   = no
+findtime = 10m
+maxretry = 3
+bantime  = 15m
+}]
+
+[para]
+
+Change [const {logpath}] if your logfile is elsewhere. Use an absolute path
+readable by the host's Fail2Ban process. The [const {tail}] modifier starts
+a newly watched file at its end. Three matching entries from the same source
+within ten minutes trigger a fifteen-minute ban with these settings.
+
+[para]
+
+Add one of the following action blocks under the same jail section. Both
+examples use the packaged [const {iptables-multiport}] action. Separate
+action and chain names let TCP and UDP use different port lists.
+
+[subsection {NaviServer listening directly on the host}]
+
+Use [const {INPUT}] and the actual listener ports. For HTTP on TCP/80, HTTPS
+on TCP/443, and HTTP/3 on UDP/443:
+
+[example {
+action = iptables-multiport[actname=naviserver-tcp, name=naviserver-tcp, chain=INPUT, port="80,443", protocol=tcp]
+         iptables-multiport[actname=naviserver-udp, name=naviserver-udp, chain=INPUT, port=443, protocol=udp]
+}]
+
+[para]
+
+Omit the UDP action if you do not serve HTTP/3. This also applies to Docker
+host networking when NaviServer listens directly in the host's network
+namespace.
+
+[subsection {NaviServer in Docker with bridge networking}]
+
+Run Fail2Ban on the host. Give the host access to NaviServer's system
+logfile through a bind mount or another host-readable path. Set
+[const logpath] to that path. For example, if you expose the logfile under
+[file /srv/naviserver/log] on the host:
+
+[example {
+logpath = /srv/naviserver/log/nsd.log tail
+}]
+
+[para]
+
+For Docker's iptables firewall backend, use [const {DOCKER-USER}] if the
+host's [const {FORWARD}] chain jumps there. Packets have already gone
+through destination NAT when they reach [const {DOCKER-USER}], so the action
+must match the container-side destination ports. This does not change the
+source address being banned.
+
+[para]
+
+Check the configured ports and chains on the host:
+
+[example {
+docker ps --format '{{.Names}}\t{{.Ports}}'
+for fw in iptables ip6tables; do
+    printf '\n%s\n' "$fw"
+    "$fw" -t nat -S DOCKER | grep -E -- '--dport (80|443)( |$)'
+    "$fw" -S FORWARD
+    "$fw" -S DOCKER-USER
+done
+}]
+
+[para]
+
+The verified OpenACS mapping was:
+
+[list_begin definitions]
+[def {Public port 80 to container port 8080}]
+TCP over IPv4 and IPv6.
+[def {Public port 443 to container port 8443}]
+TCP over IPv4 and IPv6, and UDP over IPv4.
+[list_end]
+
+[para]
+
+The jail action for that mapping is:
+
+[example {
+action = iptables-multiport[actname=naviserver-tcp, name=naviserver-tcp, chain=DOCKER-USER, port="8080,8443", protocol=tcp]
+         iptables-multiport[actname=naviserver-udp, name=naviserver-udp, chain=DOCKER-USER, port=8443, protocol=udp]
+}]
+
+[para]
+
+The stock UDP action can install a ban in both address families. On this
+setup only IPv4 has a published HTTP/3 port. These stock actions scope the
+ban by protocol and destination port across forwarded traffic. If other
+containers share those destination ports and should remain reachable from a
+banned IP, scope the jump further to the intended service.
+
+[para]
+
+Docker's native nftables backend uses a different forwarding rule layout. Do
+not use this [const {DOCKER-USER}] example on that backend; use an nftables
+action on the host's forwarding path. Likewise, if a host process terminates
+the connections, use the host-local path or enforce the ban at the proxy.
+
+[section {Enable and verify}]
+
+The example jail starts disabled. To activate it, replace
+[const {enabled = false}] with the following line under
+[const {[naviserver-probes]}] in
+[file /etc/fail2ban/jail.d/naviserver-probes.local]:
+
+[example {
+ enabled  = true
+}]
+
+[para]
+
+Then check the configuration, reload Fail2Ban, and confirm the jail is
+active. Run as root, or use sudo:
+
+[example {
+ sudo fail2ban-client -t && fail2ban-client reload && fail2ban-client status naviserver-probes
+}]
+
+[para]
+
+The configuration check does not exercise the firewall. For a full test,
+emit three fresh markers from the NaviServer console ([const {nscp}]), using
+an address reserved for documentation:
+
+[example {
+ for {set i 0} {$i < 3} {incr i} {
+    ns_log Notice "F2B_NAVISERVER_PROBE ip=192.0.2.11"
+    if {$i < 2} {
+        after 1100
+    }
+ }
+}]
+
+[para]
+
+After a few seconds, list the currently banned IP addresses in this jail.
+The output should include [const {192.0.2.11}]:
+
+[example {
+ sudo fail2ban-client get naviserver-probes banip
+}]
+
+[para]
+
+While the ban is active, inspect the installed rules:
+
+[example {
+iptables -S DOCKER-USER    # use INPUT for the host-local setup
+iptables -S f2b-naviserver-tcp
+iptables -S f2b-naviserver-udp # omit if the UDP action is disabled
+}]
+
+[para]
+
+The protocol/port jumps should precede the final [const {RETURN}] in [const {DOCKER-USER}], and the per-jail chains should show the banned source
+address. Rules may be created on demand at the first ban.
+
+[para]
+
+Remove the test ban when you are done:
+
+[example {
+ sudo fail2ban-client set naviserver-probes unbanip 192.0.2.11
+}]
+
+[para]
+
+For IPv6, repeat with [const {2001:db8::11}] and inspect [const {ip6tables}]. These tests verify log processing and firewall rule
+installation without blocking a real visitor.
+
+[para]
+
+On OpenACS, the colored filter matched a real NaviServer log marker, manual
+bans installed and removed IPv4 and IPv6 rules, and three console-generated
+markers caused an automatic ban.
+
+[section {References}]
+
+[list_begin itemized]
+[item] [uri ./admin-config.html {NaviServer configuration: system logs and color settings}]
+[item] [uri ../../naviserver/files/ns_conn.html {NaviServer ns_conn manual}]
+[item] [uri https://manpages.debian.org/bullseye/fail2ban/jail.conf.5.en.html {Fail2Ban jail and action configuration}]
+[item] [uri https://docs.docker.com/engine/network/firewall-iptables/ {Docker firewall rules with iptables}]
+[item] [uri https://docs.docker.com/engine/network/firewall-nftables/ {Docker firewall rules with nftables}]
+[list_end]
+
+[see_also admin-config admin-maintenance admin-running]
+[keywords Fail2Ban logging firewall Docker {probe requests}]
+[manpage_end]

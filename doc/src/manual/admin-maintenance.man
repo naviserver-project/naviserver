@@ -372,6 +372,9 @@ To further enhance security, consider the following recommendations:
        deactivate this information per server in the
        configuration file:
 
+[item] To apply temporary firewall bans for known probe requests, see
+       [uri ./admin-fail2ban.html {Protecting NaviServer with Fail2Ban}].
+
 [example_begin]
  ns_section ns/server/$server {
    ...
