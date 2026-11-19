@@ -187,7 +187,12 @@ Discard this thread's buffered messages, leaving [arg count] untouched.
       [arg handle] ]
 
 Unregisters the previously registered log filter script identified by
-[arg handle].
+[arg handle]. No new invocations of this filter start after it is
+unregistered. Calls outside log filter and filter cleanup callbacks wait
+for active invocations to finish. Calls from any such callback never wait,
+including when unregistering a different filter; callback data is retained
+until active invocations finish. Cleanup procedures run without the log
+registry mutex held and may log or unregister filters.
 
 
 

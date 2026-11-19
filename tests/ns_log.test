@@ -387,6 +387,134 @@ test ns_log-recursive-callback {logging inside a Tcl log callback does not reent
     nsv_unset -nocomplain recursiveLog
 } -result 1
 
+test ns_log-unregister-active {unregister waits for an active callback} -setup {
+    set warningEnabled [ns_logctl severity Warning]
+    ns_logctl severity Warning on
+    nsv_set unregisterLog entered 0
+    nsv_set unregisterLog release 0
+    nsv_set unregisterLog completed 0
+    set filter [ns_logctl register {apply {{severity timestamp message} {
+        if {$message eq "unregister-active-callback"} {
+            nsv_set unregisterLog entered 1
+            set deadline [expr {[clock milliseconds] + 10000}]
+            while {![nsv_get unregisterLog release]
+                   && [clock milliseconds] < $deadline} {
+                ns_sleep 10ms
+            }
+            nsv_set unregisterLog completed 1
+        }
+    }}}]
+    set logger [ns_thread create {
+        ns_log Warning unregister-active-callback
+        return logged
+    }]
+} -body {
+    set deadline [expr {[clock milliseconds] + 10000}]
+    while {![nsv_get unregisterLog entered]} {
+        if {[clock milliseconds] >= $deadline} {
+            error "log callback did not start"
+        }
+        ns_sleep 10ms
+    }
+    set releaser [ns_thread create {
+        ns_sleep 100ms
+        nsv_set unregisterLog release 1
+        return released
+    }]
+    ns_logctl unregister $filter
+    set filter ""
+    set completed [nsv_get unregisterLog completed]
+    set logged [ns_thread wait $logger]
+    unset logger
+    set released [ns_thread wait $releaser]
+    unset releaser
+    list $completed $logged $released
+} -cleanup {
+    nsv_set unregisterLog release 1
+    if {$filter ne ""} {
+        ns_logctl unregister $filter
+    }
+    ns_logctl severity Warning $warningEnabled
+    # The worker exits before its callback state is removed.
+    if {[info exists logger]} {
+        ns_thread wait $logger
+        unset logger
+    }
+    if {[info exists releaser]} {
+        catch {ns_thread wait $releaser}
+        unset releaser
+    }
+    nsv_unset -nocomplain unregisterLog
+} -result {1 logged released}
+
+test ns_log-self-unregister {a filter can unregister itself during a buffered flush} -setup {
+    set warningEnabled [ns_logctl severity Warning]
+    ns_logctl severity Warning on
+    nsv_set selfUnregisterLog calls {}
+    set observer [ns_logctl register {apply {{severity timestamp message} {
+        if {[string match review-self-* $message]} {
+            nsv_lappend selfUnregisterLog calls observer:$message
+        }
+    }}}]
+    set filter [ns_logctl register {apply {{severity timestamp message} {
+        if {[string match review-self-* $message]} {
+            nsv_lappend selfUnregisterLog calls self:$message
+            ns_logctl unregister [nsv_get selfUnregisterLog handle]
+        }
+    }}}]
+    # nsv stores strings. The address parser accepts the pointer-only spelling.
+    set filter [regsub -- {-ns:logfilter$} $filter {}]
+    nsv_set selfUnregisterLog handle $filter
+} -body {
+    ns_logctl hold
+    ns_log Warning review-self-1
+    ns_log Warning review-self-2
+    ns_logctl release
+    nsv_get selfUnregisterLog calls
+} -cleanup {
+    ns_logctl unregister $filter
+    ns_logctl unregister $observer
+    ns_logctl release
+    ns_logctl severity Warning $warningEnabled
+    nsv_unset -nocomplain selfUnregisterLog
+} -result {self:review-self-1 observer:review-self-1 observer:review-self-2}
+
+test ns_log-unregister-head-buffered {reload the head after a later callback removes it} -setup {
+    set warningEnabled [ns_logctl severity Warning]
+    ns_logctl severity Warning on
+    nsv_set removeHeadLog calls {}
+    # Filters run newest first. The older filter removes the former head
+    # after that head's callback has returned, before the next entry.
+    set older [ns_logctl register {apply {{severity timestamp message} {
+        if {[string match review-head-* $message]} {
+            nsv_lappend removeHeadLog calls older:$message
+            if {$message eq "review-head-1"} {
+                ns_logctl unregister [nsv_get removeHeadLog handle]
+            }
+        }
+    }}}]
+    set head [ns_logctl register {apply {{severity timestamp message} {
+        if {[string match review-head-* $message]} {
+            nsv_lappend removeHeadLog calls head:$message
+        }
+    }}}]
+    # nsv stores strings. The address parser accepts the pointer-only spelling.
+    set head [regsub -- {-ns:logfilter$} $head {}]
+    nsv_set removeHeadLog handle $head
+} -body {
+    ns_logctl hold
+    ns_log Warning review-head-1
+    ns_log Warning review-head-2
+    ns_logctl release
+    nsv_get removeHeadLog calls
+} -cleanup {
+    ns_logctl unregister $head
+    ns_logctl unregister $older
+    ns_logctl release
+    ns_logctl severity Warning $warningEnabled
+    nsv_unset -nocomplain removeHeadLog
+} -result {head:review-head-1 older:review-head-1 older:review-head-2}
+
 cleanupTests
 
 # Local variables:

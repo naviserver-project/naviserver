@@ -69,10 +69,17 @@ typedef struct LogFilter {
     Ns_LogFilter      *proc;        /* User-given function for generating logs */
     Ns_FreeProc       *freeArgProc; /* User-given function to free passed arg */
     void              *arg;         /* Argument passed to proc and free */
-    int                refcnt;      /* Number of current consumers */
+    int                refcnt;      /* Number of active callbacks */
+    int                waiters;     /* Unregister callers waiting for callbacks */
+    bool               removed;     /* Skip callbacks; reclaim when no users remain */
     struct LogFilter  *nextPtr;     /* Maintains double linked list */
     struct LogFilter  *prevPtr;
 } LogFilter;
+
+typedef struct LogInvocation {
+    LogFilter            *filterPtr;
+    struct LogInvocation *prevPtr;
+} LogInvocation;
 
 /*
  * The following struct maintains per-thread cached log entries.
@@ -110,6 +117,10 @@ static void LogEntriesFree(void *arg);
  * Local functions defined in this file
  */
 
+static void LogFilterUpdateMode(void);
+static void LogFilterDetach(LogFilter *filterPtr) NS_GNUC_NONNULL(1);
+static void LogFilterFree(LogFilter *filterPtr) NS_GNUC_NONNULL(1);
+
 static Ns_TlsCleanup FreeCache;
 static Ns_ThreadProc LogThreadInitialize;
 static bool LogThreadHostIds(const char *path, uint64_t tid, uint64_t *pidPtr,
@@ -137,7 +148,7 @@ static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 
 static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
                       bool trunc, bool locked)
-    NS_GNUC_NONNULL(1,2);
+    NS_GNUC_NONNULL(1);
 
 static Ns_LogCallbackProc LogOpen;
 static Ns_LogCallbackProc LogClose;
@@ -155,6 +166,7 @@ static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity)
  */
 
 static Ns_Tls       tls;
+static Ns_Tls       invocationTls; /* Callback stack, also during cache cleanup */
 #if !defined(NS_THREAD_LOCAL)
 static Ns_Tls       tlsEntry;
 #endif
@@ -170,6 +182,8 @@ static Ns_AtomicUint32 hostProcEnabled;
 static TCL_SIZE_T   maxbackup;
 
 static LogFilter   *filters;
+/* True only for the immutable built-in stderr sink, with no other nodes. */
+static Ns_AtomicUint32 defaultOnly;
 static const char  *const filterType = "ns:logfilter";
 static const char  *const severityType = "ns:logseverity";
 
@@ -277,7 +291,9 @@ NsInitLog(void)
     Ns_MutexSetName(&lock, "ns:log");
     Ns_CondInit(&cond);
 
+    Ns_AtomicUint32Init(&defaultOnly, 0u);
     Ns_TlsAlloc(&tls, FreeCache);
+    Ns_TlsAlloc(&invocationTls, NULL);
 #if !defined(NS_THREAD_LOCAL)
     Ns_TlsAlloc(&tlsEntry, LogEntriesFree);
 #endif
@@ -774,7 +790,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
          * Flush it out if not held or severity is "Fatal"
          */
         if (!cachePtr->hold || severity == Fatal) {
-            LogFlush(cachePtr, filters, -1, NS_TRUE, NS_FALSE);
+            LogFlush(cachePtr, NULL, -1, NS_TRUE, NS_TRUE);
         }
     }
 }
@@ -819,6 +835,7 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_FreeProc *freeProc)
     filterPtr->proc = procPtr;
     filterPtr->arg  = arg;
     filterPtr->freeArgProc = freeProc;
+    LogFilterUpdateMode();
 
     Ns_MutexUnlock(&lock);
 }
@@ -843,7 +860,7 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_FreeProc *freeProc)
 void
 Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
 {
-    LogFilter *filterPtr;
+    LogFilter *filterPtr, *freePtr = NULL;
 
     NS_NONNULL_ASSERT(procPtr != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
@@ -857,23 +874,77 @@ Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
         filterPtr = filterPtr->prevPtr;
     }
     if (filterPtr != NULL) {
-        while (filterPtr->refcnt > 0) {
-            Ns_CondWait(&cond, &lock);
+        /*
+         * Keep retired nodes linked until their last user leaves. This keeps
+         * the traversal links of active callbacks valid while unlocked.
+         * New traversals skip retired nodes immediately.
+         */
+        filterPtr->removed = NS_TRUE;
+        /* Never wait from a filter or its cleanup callback: callbacks on
+         * different threads may otherwise wait for one another forever. */
+        if (Ns_TlsGet(&invocationTls) == NULL) {
+            /* Keep the node alive until every waiting remover wakes. */
+            filterPtr->waiters++;
+            while (filterPtr->refcnt > 0) {
+                Ns_CondWait(&cond, &lock);
+            }
+            filterPtr->waiters--;
         }
-        if (filterPtr->prevPtr != NULL) {
-            filterPtr->prevPtr->nextPtr = filterPtr->nextPtr;
+        if (filterPtr->refcnt == 0 && filterPtr->waiters == 0) {
+            LogFilterDetach(filterPtr);
+            freePtr = filterPtr;
         }
-        if (filterPtr->nextPtr != NULL) {
-            filterPtr->nextPtr->prevPtr = filterPtr->prevPtr;
-        } else {
-            filters = filterPtr->prevPtr;
-        }
-        if (filterPtr->freeArgProc != NULL && filterPtr->arg != NULL) {
-            (*filterPtr->freeArgProc)(filterPtr->arg);
-        }
-        ns_free(filterPtr);
     }
     Ns_MutexUnlock(&lock);
+    if (freePtr != NULL) {
+        LogFilterFree(freePtr);
+    }
+}
+
+/* Called with lock held. Readers of this flag never dereference filters. */
+static void
+LogFilterUpdateMode(void)
+{
+    bool onlyDefault = filters != NULL && filters->prevPtr == NULL
+        && !filters->removed && filters->proc == LogToFile
+        && filters->arg == INT2PTR(STDERR_FILENO) && filters->freeArgProc == NULL;
+
+    Ns_AtomicUint32StoreRelease(&defaultOnly, onlyDefault ? 1u : 0u);
+}
+
+/* Called with lock held and no remaining references. */
+static void
+LogFilterDetach(LogFilter *filterPtr)
+{
+    assert(filterPtr->removed && filterPtr->refcnt == 0 && filterPtr->waiters == 0);
+
+    if (filterPtr->prevPtr != NULL) {
+        filterPtr->prevPtr->nextPtr = filterPtr->nextPtr;
+    }
+    if (filterPtr->nextPtr != NULL) {
+        filterPtr->nextPtr->prevPtr = filterPtr->prevPtr;
+    } else {
+        filters = filterPtr->prevPtr;
+    }
+    filterPtr->prevPtr = NULL;
+    filterPtr->nextPtr = NULL;
+    LogFilterUpdateMode();
+}
+
+/* Detached and exclusively owned: never call user cleanup locked. */
+static void
+LogFilterFree(LogFilter *filterPtr)
+{
+    LogInvocation invocation;
+
+    invocation.filterPtr = filterPtr;
+    invocation.prevPtr = Ns_TlsGet(&invocationTls);
+    Ns_TlsSet(&invocationTls, &invocation);
+    if (filterPtr->freeArgProc != NULL && filterPtr->arg != NULL) {
+        (*filterPtr->freeArgProc)(filterPtr->arg);
+    }
+    Ns_TlsSet(&invocationTls, invocation.prevPtr);
+    ns_free(filterPtr);
 }
 
 
@@ -1548,7 +1619,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 Tcl_WrongNumArgs(interp, 2, objv, NULL);
                 result = TCL_ERROR;
             } else {
-                LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
+                LogFlush(cachePtr, NULL, -1, NS_TRUE, NS_TRUE);
             }
             break;
 
@@ -1854,11 +1925,27 @@ static void
 LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool locked)
 {
     int            nentry = 0;
-    LogFilter     *cPtr;
+    LogFilter     *cPtr, *freeList = NULL, fallback;
     LogEntry      *ePtr;
 
     NS_NONNULL_ASSERT(cachePtr != NULL);
-    NS_NONNULL_ASSERT(listPtr != NULL);
+    assert(locked || listPtr != NULL);
+
+    /*
+     * The built-in sink has constant arguments and no user cleanup. When it
+     * is the sole filter, use a private descriptor instead of reading the
+     * registry or taking references. A registration concurrent with this
+     * load takes effect on a subsequent flush, as with a captured filter head.
+     * Custom filters always use the synchronized traversal below.
+     */
+    if (locked && listPtr == NULL
+        && Ns_AtomicUint32LoadAcquire(&defaultOnly) != 0u) {
+        memset(&fallback, 0, sizeof(fallback));
+        fallback.proc = LogToFile;
+        fallback.arg = INT2PTR(STDERR_FILENO);
+        listPtr = &fallback;
+        locked = NS_FALSE;
+    }
 
     /*fprintf(stderr, "#### %s cachePtr %p locked %d count %d cachePtr->count %d hold %d\n",
       Ns_ThreadGetName(), (void*)cachePtr, locked, count, cachePtr->count, cachePtr->hold);*/
@@ -1871,42 +1958,48 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
     while (ePtr != NULL && cachePtr->currentEntry != NULL) {
         const char *logString = cachePtr->buffer.string + ePtr->offset;
 
-        /*
-         * Since listPtr is never NULL, a repeat-unil loop is
-         * sufficient to guarantee that the initial cPtr is not NULL
-         * either.
-         */
-        cPtr = listPtr;
-        do {
-            if (cPtr->proc != NULL) {
-                Ns_ReturnCode  status;
+        /* Select the current head only while holding the registry lock. */
+        cPtr = (listPtr != NULL) ? listPtr : filters;
+        while (cPtr != NULL) {
+            LogFilter *nextPtr;
+
+            if (cPtr->proc != NULL && !cPtr->removed) {
+                Ns_ReturnCode status;
+                LogInvocation invocation;
 
                 if (locked) {
                     cPtr->refcnt++;
+                    invocation.filterPtr = cPtr;
+                    invocation.prevPtr = Ns_TlsGet(&invocationTls);
+                    Ns_TlsSet(&invocationTls, &invocation);
                     Ns_MutexUnlock(&lock);
                 }
                 status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
                                        &ePtr->stamp, logString, ePtr->length);
                 if (locked) {
                     Ns_MutexLock(&lock);
+                    Ns_TlsSet(&invocationTls, invocation.prevPtr);
                     cPtr->refcnt--;
                     Ns_CondBroadcast(&cond);
                 }
+                nextPtr = cPtr->prevPtr;
+                if (locked && cPtr->removed
+                    && cPtr->refcnt == 0 && cPtr->waiters == 0) {
+                    LogFilterDetach(cPtr);
+                    cPtr->nextPtr = freeList;
+                    freeList = cPtr;
+                }
                 if (status == NS_ERROR) {
-                    /*
-                     * Callback signaled an error. Per definition we
-                     * will skip invoking other registered filters. In
-                     * such case we must assure that the current log
-                     * entry eventually gets written into some log
-                     * sink, so we use the default logfile sink.
-                     */
+                    /* Ensure an entry rejected by a filter reaches a sink. */
                     (void) LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
                                      &ePtr->stamp, logString, ePtr->length);
                     break;
                 }
+            } else {
+                nextPtr = cPtr->prevPtr;
             }
-            cPtr = cPtr->prevPtr;
-        } while (cPtr != NULL);
+            cPtr = nextPtr;
+        }
 
         nentry++;
         if ((count > 0 && nentry >= count) || ePtr == cachePtr->currentEntry) {
@@ -1946,6 +2039,14 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
 
     if (locked) {
         Ns_MutexUnlock(&lock);
+    }
+
+    /* No traversal pointer or cache entry is live across user cleanup. */
+    while (freeList != NULL) {
+        LogFilter *freePtr = freeList;
+
+        freeList = freePtr->nextPtr;
+        LogFilterFree(freePtr);
     }
 }
 
@@ -2608,7 +2709,7 @@ FreeCache(void *arg)
 
         cachePtr->finalizing = NS_TRUE;
 
-        LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
+        LogFlush(cachePtr, NULL, -1, NS_TRUE, NS_TRUE);
 
         Tcl_DStringFree(&cachePtr->buffer);
         ns_free(cachePtr);
