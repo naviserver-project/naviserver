@@ -102,11 +102,22 @@ test nsdb-withhandle-11 {mutually exclusive forms and invalid borrowed handle do
     list $r $ran [ns_db currenthandles]
 } -result {{1 1 1} false {}}
 
-test nsdb-withhandle-12 {nested pool checkout keeps existing same-pool rejection} -body {
+test nsdb-withhandle-12 {nested pool checkout keeps existing same-pool rejection} -setup {
+    set quietWithhandle [expr {"start" ni [::tcltest::configure -verbose]}]
+    if {$quietWithhandle} {ns_logctl hold}
+} -body {
     ns_db withhandle -pool a db {
         list [catch {ns_db withhandle -pool a inner {error unreachable}}] [ns_db poolname $db]
     }
-} -result {1 a}
+} -cleanup {
+    if {$quietWithhandle} {
+        set checkoutDiagnostic [ns_logctl get]
+        ns_logctl release
+        if {![string match {*Error: dbinit: db handle limit exceeded: thread already owns 1 handle from pool 'a'*} $checkoutDiagnostic]} {
+            error "unexpected nested-checkout diagnostic: $checkoutDiagnostic"
+        }
+    }
+} -returnCodes {error ok} -result {1 a}
 
 test nsdb-withhandle-13 {owned scope survives explicit early release} -body {
     ns_db withhandle db {ns_db releasehandle $db; set result released}
