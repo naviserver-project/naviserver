@@ -7253,6 +7253,25 @@ SockParse(Sock *sockPtr)
          * Find the next header line.
          */
         s = bufPtr->string + reqPtr->roff;
+
+        /*
+         * HTTP/2 prior-knowledge clients send this preface before frames.
+         * Recognize the complete signature before the HTTP/1 parser treats
+         * PRI's asterisk target as a malformed request. Keep matching partial
+         * prefixes intact across reads; no additional buffer is needed.
+         */
+        if (reqPtr->request.line == NULL && reqPtr->avail > 0u && s[0] == 'P') {
+            static const char preface[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+            const size_t prefaceLength = sizeof(preface) - 1u;
+
+            if (memcmp(s, preface, MIN(reqPtr->avail, prefaceLength)) == 0) {
+                if (reqPtr->avail < prefaceLength) {
+                    return SOCK_MORE;
+                }
+                reqPtr->parseError = "received HTTP/2 connection preface on an HTTP/1 connection";
+                return SOCK_BADREQUEST;
+            }
+        }
         e = memchr(s, INTCHAR('\n'), reqPtr->avail);
 
         if (unlikely(e == NULL)) {

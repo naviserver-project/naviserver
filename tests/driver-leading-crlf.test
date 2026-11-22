@@ -3,45 +3,9 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
-# These tests must enable severities to assert the driver diagnostics, which
-# originate in other threads and cannot use this interpreter's log hold. For
-# quiet suite runs, capture a child server's output and propagate its actual
-# test counts. Focused -verbose start runs keep diagnostics directly visible.
-if {"start" ni [::tcltest::configure -verbose]} {
-    set childConfig [::tcltest::makeFile {} driver-leading-crlf-child.nscfg]
-    set configChannel [open $childConfig w]
-    puts $configChannel [list source [file join [ns_config test home] test.nscfg]]
-    puts $configChannel [list ns_section -update ns/parameters]
-    puts $configChannel [list ns_param pidfile $childConfig.pid]
-    close $configChannel
-    set parentDirectory [pwd]
-    set childCode [catch {
-        cd [file dirname [ns_config test home]]
-        exec -- [ns_info nsd] -c -d -t $childConfig \
-            [file join [file dirname [info script]] all.tcl] \
-            {*}$argv -file [file tail [info script]] -verbose {start error} 2>@1
-    } childOutput childOptions]
-    cd $parentDirectory
-    ::tcltest::removeFile driver-leading-crlf-child.nscfg
-    if {![regexp {all[.]tcl:[ \t]+Total[ \t]+([0-9]+)[ \t]+Passed[ \t]+([0-9]+)[ \t]+Skipped[ \t]+([0-9]+)[ \t]+Failed[ \t]+([0-9]+)} \
-              $childOutput -> total passed skipped failed]} {
-        error "driver regression child did not report test results:\n$childOutput"
-    }
-    if {$childCode && $failed == 0} {
-        # Some command-mode builds finish a successful ns_shutdown via SIGTERM.
-        set ec [dict get $childOptions -errorcode]
-        if {[lindex $ec 0] ne "CHILDKILLED" || [lindex $ec 2] ne "SIGTERM"} {
-            error "driver regression child failed after reporting results:\n$childOutput"
-        }
-    }
-    foreach key {Total Passed Skipped Failed} value [list $total $passed $skipped $failed] {
-        incr ::tcltest::numTests($key) $value
-    }
-    if {$failed != 0 || [string match {*Test files exiting with errors:*} $childOutput]} {
-        puts [::tcltest::configure -outputChannel] $childOutput
-        if {$failed == 0} {error "driver regression child exited with test-file errors"}
-    }
-    unset childConfig configChannel parentDirectory childCode childOutput childOptions total passed skipped failed key value
+# Log assertions require enabled severities, including in worker threads.
+source [file join [file dirname [info script]] quiet-logging.tcl]
+if {[::tcltest::runQuietLoggingTests [info script] $argv]} {
     ::tcltest::cleanupTests
     return
 }
@@ -496,6 +460,57 @@ foreach {suffix name splits expected} {
             nsv_unset -nocomplain tlsSni
         } -result [list {400 {}} 1 $expected 1]
 }
+
+# A complete HTTP/2 client preface must be diagnosed without interpreting PRI
+# as an HTTP/1 method. Matching prefixes survive individual socket reads.
+foreach {suffix cuts valid} {
+    1 {} 1
+    2 {1 8 15 16 18 21} 1
+    3 {} 0
+} {
+    test driver-http2-preface-1.$suffix {HTTP/2 preface has one specific rejection diagnostic} \
+        -constraints serverListen -setup {
+            set warningEnabled [ns_logctl severity Warning on]
+            nsv_set http2Preface warnings {}
+            set filter [ns_logctl register {apply {{severity timestamp message} {
+                if {$severity eq "Warning" && [regexp {HTTP/2|ASTERISK|cannot parse request line} $message]} {
+                    nsv_lappend http2Preface warnings $message
+                }
+            }}}]
+        } -body {
+            set preface "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+            if {!$valid} {set preface [string replace $preface 18 19 XX]}
+            # Empty SETTINGS frame, sent in the final write with the preface.
+            append preface [binary format H* 000000040000000000]
+            set parts {}
+            set start 0
+            foreach end $cuts {
+                lappend parts [string range $preface $start [expr {$end-1}]]
+                set start $end
+            }
+            lappend parts [string range $preface $start end]
+            set reply [::leadingCRLF::exchange $parts]
+            set deadline [expr {[clock milliseconds] + 2000}]
+            while {[llength [nsv_get http2Preface warnings]] == 0 && [clock milliseconds] < $deadline} {
+                ns_sleep 10ms
+            }
+            set warnings [nsv_get http2Preface warnings]
+            set message [lindex $warnings 0]
+            list $reply [llength $warnings] \
+                [expr {[string first {received HTTP/2 connection preface on an HTTP/1 connection} $message] >= 0}] \
+                [expr {[string first {invalid ASTERISK request} $message] >= 0}] \
+                [regexp {invalid request: 400 .* from peer (::1|127[.]0[.]0[.]1):} $message]
+        } -cleanup {
+            ns_logctl unregister $filter
+            ns_logctl severity Warning $warningEnabled
+            nsv_unset -nocomplain http2Preface
+        } -returnCodes {error ok} -result [list {400 {}} 1 $valid [expr {!$valid}] 1]
+}
+
+test driver-http2-preface-2 {ordinary POST request remains HTTP/1} \
+    -constraints serverListen -setup {::leadingCRLF::setup} -body {
+        ::leadingCRLF::exchange [list "POST /__leading_crlf HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\nConnection: close\r\n\r\ntest"]
+    } -cleanup {::leadingCRLF::cleanup} -returnCodes {error ok} -result {200 test}
 
 namespace delete ::leadingCRLF
 cleanupTests

@@ -6,6 +6,14 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+# Log assertions require enabled severities, including in worker threads.
+source [file join [file dirname [info script]] quiet-logging.tcl]
+if {[::tcltest::runQuietLoggingTests [info script] $argv]} {
+    ::tcltest::cleanupTests
+    return
+}
+
+
 
 #######################################################################################
 #  test ns_asynclogfile
