@@ -363,6 +363,9 @@ static void  SockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
 static SockState SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
+static bool ClientHelloSni(const unsigned char *bytes, size_t length, char *hostname)
+    NS_GNUC_NONNULL(1,3);
+
 static SockState SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void SockPoll(Sock *sockPtr, short type, PollData *pdata)
@@ -5762,11 +5765,19 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
 
             (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), peer, NS_IPADDR_SIZE);
 
-            if (statusCode == 400 && reqPtr->buffer.length >= 3
-                && bufferString[0] == (char)0x16 && bufferString[1] >= 3 && bufferString[2] == 1) {
+            if (statusCode == 400
+                && reqPtr->buffer.length >= 3
+                && bufferString[0] == (char)0x16 && bufferString[1] >= 3
+                && bufferString[2] == 1) {
+                char hostname[254];
+                bool haveSni = ClientHelloSni((const unsigned char *)bufferString,
+                                              (size_t)reqPtr->buffer.length, hostname);
+
                 Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake "
-                       "on a non-TLS connection%s",
-                       statusCode, errMsg, peer, ds.string);
+                       "on a non-TLS connection%s%s%s",
+                       statusCode, errMsg, peer,
+                       haveSni ? "; SNI hostname " : "",
+                       haveSni ? hostname : "", ds.string);
 
             } else {
                 Tcl_DString dsReqLine, dsBuffer, limits;
@@ -7055,6 +7066,121 @@ EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
     return SOCK_READY;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientHelloSni --
+ *
+ *      Extract a bounded, printable DNS hostname from a complete TLS
+ *      ClientHello in the first record. Unsupported or malformed input
+ *      simply has no SNI diagnostic; it is still rejected by the driver.
+ *
+ * Results:
+ *      True when hostname contains a NUL-terminated SNI name (max 253 bytes).
+ *
+ * Side effects:
+ *      Writes hostname on success.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+ClientHelloSni(const unsigned char *bytes, size_t length, char *hostname)
+{
+    size_t end, offset, n, extensionsEnd;
+
+#define SNI_U16(p) (((size_t)(p)[0] << 8) | (size_t)(p)[1])
+
+    if (length < 9u || bytes[0] != 22u || bytes[1] != 3u
+        || bytes[5] != 1u) {
+        return NS_FALSE;
+    }
+    end = 5u + SNI_U16(bytes + 3);
+    if (end > length || end < 9u) {
+        return NS_FALSE;
+    }
+    n = ((size_t)bytes[6] << 16) | ((size_t)bytes[7] << 8) | bytes[8];
+    if (n > end - 9u || n < 35u) {
+        return NS_FALSE;
+    }
+    end = 9u + n;
+    offset = 43u; /* Handshake header, legacy version and random. */
+    n = bytes[offset++];
+    if (n > end - offset) {
+        return NS_FALSE;
+    }
+    offset += n;
+    if (end - offset < 2u) {
+        return NS_FALSE;
+    }
+    n = SNI_U16(bytes + offset);
+    offset += 2u;
+    if (n < 2u || n % 2u != 0u || n > end - offset) {
+        return NS_FALSE;
+    }
+    offset += n;
+    if (offset == end) {
+        return NS_FALSE;
+    }
+    n = bytes[offset++];
+    if (n == 0u || n > end - offset) {
+        return NS_FALSE;
+    }
+    offset += n;
+    if (end - offset < 2u) {
+        return NS_FALSE;
+    }
+    n = SNI_U16(bytes + offset);
+    offset += 2u;
+    if (n != end - offset) {
+        return NS_FALSE;
+    }
+    extensionsEnd = end;
+    while (extensionsEnd - offset >= 4u) {
+        size_t type = SNI_U16(bytes + offset), extensionEnd;
+
+        n = SNI_U16(bytes + offset + 2u); offset += 4u;
+        if (n > extensionsEnd - offset) {
+            return NS_FALSE;
+        }
+        extensionEnd = offset + n;
+        if (type == 0u) {
+            if (n < 5u || SNI_U16(bytes + offset) != n - 2u) {
+                return NS_FALSE;
+            }
+            offset += 2u;
+            while (extensionEnd - offset >= 3u) {
+                unsigned int nameType = bytes[offset];
+                n = SNI_U16(bytes + offset + 1u); offset += 3u;
+                if (n > extensionEnd - offset) {
+                    return NS_FALSE;
+                }
+                if (nameType == 0u) {
+                    size_t i;
+                    if (n == 0u || n > 253u) {
+                        return NS_FALSE;
+                    }
+                    for (i = 0u; i < n; i++) {
+                        unsigned char c = bytes[offset + i];
+
+                        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                              || (c >= '0' && c <= '9') || c == '-' || c == '.')) {
+                            return NS_FALSE;
+                        }
+                    }
+                    memcpy(hostname, bytes + offset, n);
+                    hostname[n] = '\0';
+                    return NS_TRUE;
+                }
+                offset += n;
+            }
+            return NS_FALSE;
+        }
+        offset = extensionEnd;
+    }
+    return NS_FALSE;
+#undef SNI_U16
+}
+
 /*----------------------------------------------------------------------
  *
  * SockParse --
@@ -7092,6 +7218,28 @@ SockParse(Sock *sockPtr)
 
     reqPtr = sockPtr->reqPtr;
     bufPtr = &reqPtr->buffer;
+
+    /*
+     * Keep a possible ClientHello intact across socket reads. Bound the
+     * diagnostic read to one TLS plaintext record; existing receive timeout
+     * and buffer limits still apply. Never parse TLS bytes as HTTP lines.
+     */
+    if (reqPtr->roff == 0u && bufPtr->length > 0
+        && (unsigned char)bufPtr->string[0] == 22u) {
+        const unsigned char *b = (const unsigned char *)bufPtr->string;
+        size_t length = (size_t)bufPtr->length;
+
+        if (length < 3u) return SOCK_MORE;
+        if (b[1] == 3u && b[2] == 1u) {
+            size_t recordLength;
+            if (length < 5u) return SOCK_MORE;
+            recordLength = ((size_t)b[3] << 8) | b[4];
+            if (recordLength <= 16384u && length < 5u + recordLength) {
+                return SOCK_MORE;
+            }
+            return SOCK_BADREQUEST;
+        }
+    }
 
     /*
      * Scan lines (header) until start of content (body-part)

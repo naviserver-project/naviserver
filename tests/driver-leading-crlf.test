@@ -389,5 +389,69 @@ foreach {mode description} {
     } -result {413 1 1 1 1}
 }
 
+# A minimal ClientHello, with a newline in the random to exercise the old
+# HTTP-line parser failure before a fragmented SNI extension has arrived.
+proc ::leadingCRLF::hello {name} {
+    set extensions ""
+    if {$name ne ""} {
+        set entry "\x00[binary format S [string length $name]]$name"
+        set sni "[binary format S [string length $entry]]$entry"
+        set extensions "\x00\x00[binary format S [string length $sni]]$sni"
+    }
+    set body "\x03\x03[string repeat \x0a 32]\x00\x00\x02\x00\x2f\x01\x00[binary format S [string length $extensions]]$extensions"
+    set handshake "\x01\x00[binary format S [string length $body]]$body"
+    return "\x16\x03\x01[binary format S [string length $handshake]]$handshake"
+}
+foreach {suffix name splits expected} {
+    1 fisheye.openacs.org {} 1
+    2 fisheye.openacs.org {1 2 4 48 65} 1
+    3 {} {2 4 30} 0
+    4 {bad\nname} {} 0
+    5 fisheye.openacs.org {} 0
+    6 fisheye.openacs.org {} 0
+    7 fisheye.openacs.org {} 0
+    8 fisheye.openacs.org {} 0
+} {
+    test driver-tls-sni-1.$suffix {TLS rejection logs bounded SNI once across socket reads} \
+        -constraints serverListen -setup {
+            set warningEnabled [ns_logctl severity Warning]
+            ns_logctl severity Warning on
+            nsv_set tlsSni warnings {}
+            set filter [ns_logctl register {apply {{severity timestamp message} {
+                if {$severity eq "Warning" && [string match {*received TLS handshake on a non-TLS connection*} $message]} {
+                    nsv_lappend tlsSni warnings $message
+                }
+            }}}]
+        } -body {
+            set hello [::leadingCRLF::hello [subst -nocommands -novariables $name]]
+            switch $suffix {
+                5 {set hello [string replace $hello 50 51 [binary format S 65535]]}
+                6 {set hello [string replace $hello 6 8 "\xff\xff\xff"]}
+                7 {set hello [string replace $hello 3 4 [binary format S 65535]]}
+                8 {set hello [::leadingCRLF::hello [string repeat a 254]]}
+            }
+            set parts {}
+            set start 0
+            foreach end $splits {
+                lappend parts [string range $hello $start [expr {$end-1}]]
+                set start $end
+            }
+            lappend parts [string range $hello $start end]
+            set response [::leadingCRLF::exchange $parts]
+            set deadline [expr {[clock milliseconds] + 2000}]
+            while {[llength [nsv_get tlsSni warnings]] == 0 && [clock milliseconds] < $deadline} {
+                ns_sleep 10ms
+            }
+            set warnings [nsv_get tlsSni warnings]
+            list $response [llength $warnings] \
+                [string match {*; SNI hostname fisheye.openacs.org} [lindex $warnings 0]] \
+                [string match {*from peer *} [lindex $warnings 0]]
+        } -cleanup {
+            ns_logctl unregister $filter
+            ns_logctl severity Warning $warningEnabled
+            nsv_unset -nocomplain tlsSni
+        } -result [list {400 {}} 1 $expected 1]
+}
+
 namespace delete ::leadingCRLF
 cleanupTests
