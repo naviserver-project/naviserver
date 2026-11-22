@@ -37,6 +37,8 @@ configure {*}$argv -singleproc true -testdir [file dirname [info script]]
 if {"error" ni [configure -verbose]} {
     configure -verbose [linsert [configure -verbose] end error]
 }
+# Individual test files reapply argv. Preserve error details there as well.
+lappend argv -verbose [configure -verbose]
 
 set verboseTest 0
 
@@ -124,6 +126,8 @@ proc tcltest::ns_test_meminfo_snapshot {where} {
 #ns_logctl severity Debug(ns:driver) true
 #ns_logctl severity debug on
 
+# Full regression runs stay quiet. Focused runs using -verbose start also
+# enable server diagnostics to help investigate the selected tests.
 if {"start" in [configure -verbose]} {
     ns_logctl severity notice on
     ns_logctl severity warning on

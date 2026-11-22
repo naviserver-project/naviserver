@@ -2,6 +2,50 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
+
+# These tests must enable severities to assert the driver diagnostics, which
+# originate in other threads and cannot use this interpreter's log hold. For
+# quiet suite runs, capture a child server's output and propagate its actual
+# test counts. Focused -verbose start runs keep diagnostics directly visible.
+if {"start" ni [::tcltest::configure -verbose]} {
+    set childConfig [::tcltest::makeFile {} driver-leading-crlf-child.nscfg]
+    set configChannel [open $childConfig w]
+    puts $configChannel [list source [file join [ns_config test home] test.nscfg]]
+    puts $configChannel [list ns_section -update ns/parameters]
+    puts $configChannel [list ns_param pidfile $childConfig.pid]
+    close $configChannel
+    set parentDirectory [pwd]
+    set childCode [catch {
+        cd [file dirname [ns_config test home]]
+        exec -- [ns_info nsd] -c -d -t $childConfig \
+            [file join [file dirname [info script]] all.tcl] \
+            {*}$argv -file [file tail [info script]] -verbose {start error} 2>@1
+    } childOutput childOptions]
+    cd $parentDirectory
+    ::tcltest::removeFile driver-leading-crlf-child.nscfg
+    if {![regexp {all[.]tcl:[ \t]+Total[ \t]+([0-9]+)[ \t]+Passed[ \t]+([0-9]+)[ \t]+Skipped[ \t]+([0-9]+)[ \t]+Failed[ \t]+([0-9]+)} \
+              $childOutput -> total passed skipped failed]} {
+        error "driver regression child did not report test results:\n$childOutput"
+    }
+    if {$childCode && $failed == 0} {
+        # Some command-mode builds finish a successful ns_shutdown via SIGTERM.
+        set ec [dict get $childOptions -errorcode]
+        if {[lindex $ec 0] ne "CHILDKILLED" || [lindex $ec 2] ne "SIGTERM"} {
+            error "driver regression child failed after reporting results:\n$childOutput"
+        }
+    }
+    foreach key {Total Passed Skipped Failed} value [list $total $passed $skipped $failed] {
+        incr ::tcltest::numTests($key) $value
+    }
+    if {$failed != 0 || [string match {*Test files exiting with errors:*} $childOutput]} {
+        puts [::tcltest::configure -outputChannel] $childOutput
+        if {$failed == 0} {error "driver regression child exited with test-file errors"}
+    }
+    unset childConfig configChannel parentDirectory childCode childOutput childOptions total passed skipped failed key value
+    ::tcltest::cleanupTests
+    return
+}
+
 testConstraint serverListen [expr {[ns_config test listenport] ne ""}]
 
 namespace eval ::leadingCRLF {

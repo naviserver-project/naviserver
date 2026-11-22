@@ -20,10 +20,6 @@ test nscp-2.0 {return users from config file} -constraints nscpLoaded -body {
 } -returnCodes {ok error} -result {{} nsadmin}
 
 
-# Keep server-side rejection diagnostics visible in CI, restoring the previous
-# severity setting after this test file. Passwords/hashes are never logged.
-set nscpWarningEnabled [ns_logctl severity warning true]
-
 proc nscpFailureContext {sock suffix} {
     set details [dict create expectedPrompt $suffix]
     foreach {key script} [list \
@@ -239,33 +235,35 @@ if {[testConstraint nscpLoaded] && [ns_info ipv6] && ![catch {ns_connchan listen
 }
 testConstraint nscpIPv6 $nscpV6
 
+# Compare unexpected error messages with the expected result so CI displays
+# the child-server diagnostics instead of only an unexpected return code.
 test nscp-5.0 {single IPv4 configuration remains compatible} -constraints nscpLoaded -body {
     set r [nscpListenerCase 127.0.0.1 127.0.0.1]
     list [dict get $r addresses] [dict get $r listenerCount]
-} -result {127.0.0.1 1}
+} -returnCodes {error ok} -result {127.0.0.1 1}
 
 test nscp-5.1 {localhost listeners accept by name and each numeric endpoint} -constraints nscpLoaded -body {
     set r [nscpListenerCase localhost @localhost]
     expr {[dict get $r listenerCount]>0 && [dict get $r ports]==1}
-} -result 1
+} -returnCodes {error ok} -result 1
 
 test nscp-5.2 {explicit IPv4/IPv6 address list shares authentication and port} -constraints {nscpLoaded nscpIPv6} -body {
     set r [nscpListenerCase {127.0.0.1 ::1} {127.0.0.1 ::1}]
     list [dict get $r listenerCount] [dict get $r ports]
-} -result {2 1}
+} -returnCodes {error ok} -result {2 1}
 
 test nscp-5.3 {duplicate literals and equivalent IPv6 forms bind once} -constraints {nscpLoaded nscpIPv6} -body {
     set r [nscpListenerCase {127.0.0.1 127.0.0.1 ::1 0:0:0:0:0:0:0:1} {127.0.0.1 ::1}]
     dict get $r listenerCount
-} -result 2
+} -returnCodes {error ok} -result 2
 
 test nscp-5.4 {malformed Tcl address list fails without starting listeners} -constraints nscpLoaded -body {
     nscpListenerCase \{ {} 0 {nonempty Tcl list}
-} -result rejected
+} -returnCodes {error ok} -result rejected
 
 test nscp-5.5 {empty address list fails without wildcard fallback} -constraints nscpLoaded -body {
     nscpListenerCase {} {} 0 {nonempty Tcl list}
-} -result rejected
+} -returnCodes {error ok} -result rejected
 
 test nscp-5.6 {one unavailable resolved family does not prevent the other listener} -constraints {nscpLoaded nscpIPv6} -setup {
     set occupied [ns_connchan listen -bind ::1 0 {apply {{channel} {return 0}}}]
@@ -273,14 +271,14 @@ test nscp-5.6 {one unavailable resolved family does not prevent the other listen
 } -body {
     set r [nscpListenerCase localhost 127.0.0.1 $port]
     dict get $r listenerCount
-} -cleanup {ns_connchan close [dict get $occupied channel]} -result 1
+} -cleanup {ns_connchan close [dict get $occupied channel]} -returnCodes {error ok} -result 1
 
 test nscp-5.7 {single unavailable listener still fails startup} -constraints nscpLoaded -setup {
     set occupied [ns_connchan listen -bind 127.0.0.1 0 {apply {{channel} {return 0}}}]
     set port [dict get $occupied port]
 } -body {
     nscpListenerCase 127.0.0.1 {} $port {no listening address is available}
-} -cleanup {ns_connchan close [dict get $occupied channel]} -result rejected
+} -cleanup {ns_connchan close [dict get $occupied channel]} -returnCodes {error ok} -result rejected
 
 rename nscpListenerCase {}
 unset nscpV6
@@ -289,8 +287,6 @@ rename nscpWrite {}
 rename nscpReadUntil {}
 rename nscpOpenTestConnection {}
 rename nscpFailureContext {}
-ns_logctl severity warning $nscpWarningEnabled
-unset nscpWarningEnabled
 
 cleanupTests
 
