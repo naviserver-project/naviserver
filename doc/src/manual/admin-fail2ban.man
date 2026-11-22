@@ -11,7 +11,7 @@ for repeated events, such as failed logins or known probes, and temporarily
 blocks the source IP addresses.
 
 This guide describes an optional integration with Fail2Ban on Linux.
-The guide described Configure your application to log known probe requests. Fail2Ban watches
+Configure your application to log known probe requests. Fail2Ban watches
 for those log entries and applies temporary bans at the host firewall.
 Ordinary 404 responses and normal crawling or harvesting should not
 contribute to the ban count.
@@ -22,29 +22,61 @@ From a request handler or filter, emit this line only after your application
 has classified the request as a probe:
 
 [example {
-ns_log Notice "F2B_NAVISERVER_PROBE ip=[ns_conn peeraddr -source direct]"
+ns_log Notice "F2B_NAVISERVER_PROBE ip=[ns_conn peeraddr]"
 }]
 
 [para]
 
-Keep the message fixed apart from the IP address. Do not include URLs,
-headers, or other client-supplied text. Use the direct peer address when
-NaviServer receives the client connection directly, including Docker
-forwarding that preserves the source address. Behind a reverse proxy, the
-direct peer may be the proxy itself. In that case, establish the client
-address through a trusted proxy configuration and enforce the ban where
-packets still carry that source address. An application log can name a
-client that the firewall on the backend host cannot see.
+Keep the marker and IP field at the start of the message. You can append
+an optional server-defined reason, separated from the address by a space.
+Do not include raw URLs, headers, or other client-supplied text. For example:
+
+[example {
+ns_log Notice "F2B_NAVISERVER_PROBE ip=[ns_conn peeraddr] reason=credential-probe"
+}]
+
+[para]
+
+[cmd {ns_conn peeraddr}] uses the configured client address policy. Behind
+a reverse proxy, accept forwarded addresses only from trusted proxies and
+enforce the ban where packets still carry the client source address. An
+application log can name a client that the firewall on the backend host
+cannot see.
 
 [section {Install the filter}]
 
-In [file /etc/fail2ban/filter.d/naviserver-probes.conf], install [emph one] of
-the following versions. For the standard installation under
-[const {/usr/local/ns}], the default system log is
-[file /usr/local/ns/log/nsd.log]. If NaviServer writes elsewhere, replace
-that path in both commands below and in the jail's [const logpath] setting.
-For Docker, use the path as seen from the host. Check the actual bytes in
-the log to choose the filter:
+Install this filter in [file /etc/fail2ban/filter.d/naviserver-probes.conf].
+It matches NaviServer system logs with or without ANSI color codes.
+
+[example {
+[Definition]
+datepattern = ^(?:\x1b\[[0-9;]+m)?\[%%d/%%b/%%Y:%%H:%%M:%%S\]
+failregex = ^\[[^\]\r\n]+\]\[[^\]\r\n]+\] (?:\x1b\[[0-9;]+m){0,2}Notice: F2B_NAVISERVER_PROBE ip=<ADDR>(?=[ \t\r\n]|\x1b\[0m|\Z)
+}]
+
+[para]
+
+The date pattern consumes the timestamp and any leading color code before
+Fail2Ban applies the [const failregex]. The color codes before the severity
+are also optional. The doubled percent signs are required in the filter
+file. Fail2Ban's [const {<ADDR>}] tag matches IPv4 and IPv6 literals.
+
+[para]
+
+The space after the IP address separates it from any optional details.
+A line can also end at the address or have a color reset immediately after
+it. This lets the filter accept annotations without matching only part of
+an address token. For example:
+
+[example {
+[19/Nov/2026:10:23:43][7.37987][-nscp:1-] Notice: F2B_NAVISERVER_PROBE ip=192.0.2.10
+\x1b[0;32m[19/Nov/2026:10:23:43][7.37987][-nscp:1-] \x1b[0m\x1b[0;39mNotice: F2B_NAVISERVER_PROBE ip=2001:db8::10 reason=credential-probe\x1b[0m
+}]
+
+[para]
+
+The second example shows ESC bytes as [const {\x1b}]. To inspect the byte
+sequences in a real log, use:
 
 [example {
  head -n 3 /usr/local/ns/log/nsd.log | sed -n l
@@ -52,61 +84,18 @@ the log to choose the filter:
 
 [para]
 
-These examples expect NaviServer's single-line layout: a timestamp with
-second precision, then two bracketed fields (process/thread ID and thread
-name), then the severity and message. Logs with microseconds, relative
-timestamps, a different prefix, or expanded messages need a corresponding
-change. If logging deduplicates identical messages, verify that repeated
-probe events still produce distinct marker lines.
-
-[subsection {Filter without ANSI colors}]
-
-Example line:
-
-[example {
-[19/Nov/2026:10:23:43][7.37987][-nscp:1-] Notice: F2B_NAVISERVER_PROBE ip=192.0.2.10
-}]
+The filter expects a timestamp with second precision, a bracketed
+process/thread ID, a bracketed thread name, and the message on one line.
+Adjust it if you use microseconds, relative timestamps, a different prefix,
+or expanded messages. If logging deduplicates identical messages, verify
+that repeated probe events still produce distinct marker lines.
 
 [para]
 
-Filter:
-
-[example {
-[Definition]
-datepattern = ^\[%%d/%%b/%%Y:%%H:%%M:%%S\]
-failregex = ^\[[^\]\r\n]+\]\[[^\]\r\n]+\] Notice: F2B_NAVISERVER_PROBE ip=<ADDR>$
-}]
-
-[subsection {Filter with ANSI colors}]
-
-In the colored NaviServer format used on OpenACS, an ANSI color sequence
-precedes the timestamp. The prefix color is reset after the space following
-the thread name, a second color sequence precedes the severity, and a final
-reset ends the message. A byte-escaped example (the actual log contains ESC
-bytes, not the string [const {\x1b}]):
-
-[example {
-\x1b[0;32m[19/Nov/2026:10:23:43][7.37987][-nscp:1-] \x1b[0m\x1b[0;39mNotice: F2B_NAVISERVER_PROBE ip=192.0.2.10\x1b[0m
-}]
-
-[para]
-
-Filter:
-
-[example {
-[Definition]
-datepattern = ^\x1b\[[0-9]+;[0-9]+m\[%%d/%%b/%%Y:%%H:%%M:%%S\]
-failregex = ^\[[^\]\r\n]+\]\[[^\]\r\n]+\] \x1b\[0m\x1b\[[0-9]+;[0-9]+mNotice: F2B_NAVISERVER_PROBE ip=<ADDR>\x1b\[0m$
-}]
-
-[para]
-
-In both variants, Fail2Ban extracts and removes the timestamp before
-applying the anchored [const {failregex}]. The colored date pattern also
-consumes the initial color sequence so the remaining line starts at the
-process/thread field. The doubled percent signs are required in the
-configuration file. Fail2Ban's [const {<ADDR>}] tag matches IPv4 and IPv6
-literals.
+For the standard installation under [const {/usr/local/ns}], the default
+system log is [file /usr/local/ns/log/nsd.log]. If NaviServer writes
+elsewhere, update the path in these commands and in the jail's
+[const logpath] setting. For Docker, use the path as seen from the host.
 
 [para]
 
@@ -120,8 +109,8 @@ fail2ban-regex /usr/local/ns/log/nsd.log /etc/fail2ban/filter.d/naviserver-probe
 
 Check that a known marker matches and unrelated lines do not. If you see no
 date matches, inspect the raw log prefix again. If dates match but a marker
-does not, check the bracketed fields, spacing, severity, and the trailing
-color reset.
+does not, check the bracketed fields, spacing, severity, and the delimiter
+after the address.
 
 [section {Configure the jail on the host}]
 
@@ -310,7 +299,7 @@ installation without blocking a real visitor.
 
 [para]
 
-On OpenACS, the colored filter matched a real NaviServer log marker, manual
+On OpenACS, the filter matched a real NaviServer log marker, manual
 bans installed and removed IPv4 and IPv6 rules, and three console-generated
 markers caused an automatic ban.
 
