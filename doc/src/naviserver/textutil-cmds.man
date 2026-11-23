@@ -16,6 +16,7 @@ NaviServer applications.
 [call [cmd ns_parsehtml] \
         [opt [option -noangle]] \
         [opt [option -onlytags]] \
+        [opt [option -status]] \
         [opt --] \
         [arg html]]
 
@@ -26,6 +27,15 @@ tags are
 elements, the type tag is followed by the parsed string in the first list
 element and by a Tcl dict in the second list element containing the
 parsed HTML attributes.
+
+[para]
+With [option -status], return a dictionary with keys [const elements]
+and [const errors]. The [const elements] value is the usual result.
+The [const errors] value lists malformed tag spans as pairs of zero-based
+byte offset and byte length, including the angle brackets. It is empty
+when no malformed tags were detected. In this mode malformed attribute
+warnings are returned through [const errors] instead of being logged.
+Parsing and recovery are otherwise the same.
 
 [para]
 When the option [opt -noangle] is specified, the angle brackets (less

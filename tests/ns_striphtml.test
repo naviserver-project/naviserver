@@ -456,7 +456,7 @@ test ns_unquotehtml-3.1.0 {growing byte representation} -body {
 
 test ns_parsehtml-1.0 {syntax: ns_parsehtml} -body {
     ns_parsehtml
-} -returnCodes error -result {wrong # args: should be "ns_parsehtml ?-noangle? ?-onlytags? ?--? /html/"}
+} -returnCodes error -result {wrong # args: should be "ns_parsehtml ?-noangle? ?-onlytags? ?-status? ?--? /html/"}
 
 test ns_parsehtml-1.1 {ns_parsehtml just with tags} -body {
     set text {hello <b>foo</b> anchor <a href="/foo">world</a>.}
@@ -621,6 +621,31 @@ test ns_parsehtml-3.6 {ns_parsehtml containing text with multi-byte characters} 
     set text {foo « <p> » bar}
     ns_parsehtml $text
 } -result {{text {foo « }} {tag <p> {p {}}} {text { » bar}}}
+
+test ns_parsehtml-status-1.0 {status preserves the normal result for valid HTML} -body {
+    set html {hello <a href="/example">example</a>}
+    set result [ns_parsehtml -status $html]
+    list [expr {[dict get $result elements] eq [ns_parsehtml $html]}] [dict get $result errors]
+} -result {1 {}}
+
+test ns_parsehtml-status-1.1 {status reports a malformed tag and continues through the next link} -body {
+    set html {<a href="/before">before</a><span style=&#39;font-family: "Times New Roman"&#39;>text</span><a href="/after">after</a>}
+    set result [ns_parsehtml -status -onlytags $html]
+    set links {}
+    foreach element [dict get $result elements] {
+        if {[lindex $element 0] eq "a"} {
+            lappend links [dict get [lindex $element 1] href]
+        }
+    }
+    lassign [lindex [dict get $result errors] 0] offset length
+    list $links [llength [dict get $result errors]] [string range $html $offset [expr {$offset + $length - 1}]]
+} -result {{/before /after} 1 {<span style=&#39;font-family: "Times New Roman"&#39;>}}
+
+test ns_parsehtml-status-1.2 {status preserves rejected markup as text and uses byte offsets} -body {
+    set html {é<a href="/unterminated>text}
+    set result [ns_parsehtml -status $html]
+    list [dict get $result errors] [lindex [dict get $result elements] 1]
+} -result {{{2 23}} {text {<a href="/unterminated>}}}
 
 #
 # Local variables:

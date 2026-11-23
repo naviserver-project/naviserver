@@ -37,7 +37,7 @@ HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *lastStart,
                   const char *currentPtr, bool noAngle,  bool onlyTags, Tcl_Obj *contentObj)
     NS_GNUC_NONNULL(1,2,3,4);
 static Tcl_Obj *
-HtmlParseTagAtts(const char *string, ptrdiff_t length)
+HtmlParseTagAtts(const char *string, ptrdiff_t length, bool *malformedPtr)
     NS_GNUC_NONNULL(1);
 
 static bool InitOnce(void);
@@ -2962,7 +2962,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
  *----------------------------------------------------------------------
  */
 static Tcl_Obj *
-HtmlParseTagAtts(const char *string, ptrdiff_t length)
+HtmlParseTagAtts(const char *string, ptrdiff_t length, bool *malformedPtr)
 {
     ptrdiff_t   i = 0;
     Tcl_Obj    *resultObj, *nameObj;
@@ -3018,8 +3018,12 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
             Ns_Log(Debug, "to parse attribute name '%s' i %ld length %ld", &string[i], i, length);
 
             if (CHARTYPE(space, string[i]) != 0) {
-                Ns_Log(Warning, "HtmlParseTagAtts: attribute name MUST NOT START WITH SPACE '%s'",
-                       &string[i]);
+                if (malformedPtr != NULL) {
+                    *malformedPtr = true;
+                } else {
+                    Ns_Log(Warning, "HtmlParseTagAtts: attribute name MUST NOT START WITH SPACE '%s'",
+                           &string[i]);
+                }
             }
 
             while (i<length
@@ -3074,8 +3078,12 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                             i++;
                         }
                         if (string[i] != delimiter) {
-                            Ns_Log(Warning, "HtmlParseTagAtts: missing closing delimiter (%c) in (%s)",
-                                   delimiter, string);
+                            if (malformedPtr != NULL) {
+                                *malformedPtr = true;
+                            } else {
+                                Ns_Log(Warning, "HtmlParseTagAtts: missing closing delimiter (%c) in (%s)",
+                                       delimiter, string);
+                            }
                             incorrectSyntax = NS_TRUE;
                         }
                         valueEnd = i;
@@ -3136,13 +3144,18 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                  * Safety belt: we are still at the begin of the attribute,
                  * nothing was consumed. To avoid infinite loops, advance here and complain.
                  */
-                Ns_Log(Warning, "HtmlParseTagAtts: safety belt, nothing consumed, we are pos %ld '%c' in string '%s'",
-                       i, string[i], string);
+                if (malformedPtr != NULL) {
+                    *malformedPtr = true;
+                } else {
+                    Ns_Log(Warning, "HtmlParseTagAtts: safety belt, nothing consumed, we are pos %ld '%c' in string '%s'",
+                           i, string[i], string);
+                }
                 i++;
             }
         }
 
         if (incorrectSyntax) {
+            Tcl_DecrRefCount(attributesObj);
             Tcl_DecrRefCount(resultObj);
             resultObj = NULL;
         } else {
@@ -3214,10 +3227,12 @@ int
 NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK, withNoAngleOption = (int)NS_FALSE, onlyTagsOption = (int)NS_FALSE;
+    int          statusOption = (int)NS_FALSE;
     char        *htmlString;
     Ns_ObjvSpec opts[] = {
         {"-noangle",  Ns_ObjvBool, &withNoAngleOption, INT2PTR(NS_TRUE)},
         {"-onlytags", Ns_ObjvBool, &onlyTagsOption, INT2PTR(NS_TRUE)},
+        {"-status",   Ns_ObjvBool, &statusOption, INT2PTR(NS_TRUE)},
         {"--",        Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -3239,7 +3254,7 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         bool        inPi;      /* flag to see if we are inside a processing instruction */
         const char *ptr;       /* moving pointer to input string */
         const char *lastStart;
-        Tcl_Obj    *listObj;
+        Tcl_Obj    *listObj, *errorsObj = NULL;
         bool        noAngle = withNoAngleOption ? NS_FALSE : NS_TRUE;
         bool        onlyTags = (bool)onlyTagsOption;
 
@@ -3250,6 +3265,9 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         inPi       = NS_FALSE;
 
         listObj = Tcl_NewListObj(0, NULL);
+        if (statusOption == NS_TRUE) {
+            errorsObj = Tcl_NewListObj(0, NULL);
+        }
 
         while (*ptr != '\0') {
 
@@ -3276,8 +3294,17 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             } else if (inTag) {
                 if (*ptr == '>') {
                     Tcl_Obj *contentObj;
+                    bool     malformed = false;
 
-                    contentObj = HtmlParseTagAtts(lastStart, ptr - lastStart);
+                    contentObj = HtmlParseTagAtts(lastStart, ptr - lastStart,
+                                                  errorsObj != NULL ? &malformed : NULL);
+                    if (errorsObj != NULL && (malformed || contentObj == NULL)) {
+                        Tcl_Obj *span[2];
+
+                        span[0] = Tcl_NewWideIntObj((Tcl_WideInt)(lastStart - htmlString - 1));
+                        span[1] = Tcl_NewWideIntObj((Tcl_WideInt)(ptr - lastStart + 2));
+                        Tcl_ListObjAppendElement(NULL, errorsObj, Tcl_NewListObj(2, span));
+                    }
                     /*
                      * Closing a tag.
                      */
@@ -3334,7 +3361,15 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             HtmlFinishElement(listObj, "text", lastStart, ptr, NS_FALSE, onlyTags, NULL);
         }
 
-        Tcl_SetObjResult(interp, listObj);
+        if (errorsObj != NULL) {
+            Tcl_Obj *statusObj = Tcl_NewDictObj();
+
+            Tcl_DictObjPut(NULL, statusObj, Tcl_NewStringObj("elements", TCL_INDEX_NONE), listObj);
+            Tcl_DictObjPut(NULL, statusObj, Tcl_NewStringObj("errors", TCL_INDEX_NONE), errorsObj);
+            Tcl_SetObjResult(interp, statusObj);
+        } else {
+            Tcl_SetObjResult(interp, listObj);
+        }
     }
 
     return result;
