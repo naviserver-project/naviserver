@@ -1198,8 +1198,14 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_MutexLock(&nsconf.state.lock);
     exitCode = commandExitCode;
     Ns_MutexUnlock(&nsconf.state.lock);
+    if (sig != NS_SIGTERM) {
+        exitCode = sig;
+    }
 
-    return (sig == NS_SIGTERM) ? exitCode : sig;
+    Ns_Log(Notice, "nsmain: %s/%s (%s) exiting with status %d (signal %d)",
+           Ns_InfoServerName(), Ns_InfoServerVersion(), Ns_InfoTag(), exitCode, sig);
+    
+    return exitCode;
 }
 
 
